@@ -2,15 +2,25 @@ import { TouristPlace, Itinerary, ItineraryDay, CostBreakdown, ItineraryOptions 
 
 // Rough geographic travel order (north → south, east → west within south)
 const STATE_ORDER: Record<string, number> = {
-  sikkim: 1,
-  west_bengal: 2,
-  bihar: 3,
-  maharashtra: 4,
-  telangana: 5,
-  andhra_pradesh: 6,
-  karnataka: 7,
-  tamil_nadu: 8,
-  kerala: 9,
+  himachal_pradesh: 1,
+  haryana: 2,
+  sikkim: 3,
+  assam: 4,
+  meghalaya: 5,
+  manipur: 6,
+  mizoram: 7,
+  west_bengal: 8,
+  jharkhand: 9,
+  bihar: 10,
+  chhattisgarh: 11,
+  gujarat: 12,
+  maharashtra: 13,
+  goa: 14,
+  telangana: 15,
+  andhra_pradesh: 16,
+  karnataka: 17,
+  tamil_nadu: 18,
+  kerala: 19,
 };
 
 // Group nearby places (same state, physically close) together

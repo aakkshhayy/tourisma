@@ -11,6 +11,16 @@ const GRADIENT_CLASSES: Record<string, string> = {
   'from-red-600 to-yellow-500': 'from-red-600 to-yellow-500',
   'from-amber-500 to-red-500': 'from-amber-500 to-red-500',
   'from-green-500 to-emerald-600': 'from-green-500 to-emerald-600',
+  'from-sky-500 to-blue-700': 'from-sky-500 to-blue-700',
+  'from-yellow-400 to-orange-500': 'from-yellow-400 to-orange-500',
+  'from-lime-500 to-green-600': 'from-lime-500 to-green-600',
+  'from-cyan-400 to-blue-500': 'from-cyan-400 to-blue-500',
+  'from-green-700 to-teal-700': 'from-green-700 to-teal-700',
+  'from-emerald-500 to-green-700': 'from-emerald-500 to-green-700',
+  'from-orange-600 to-red-700': 'from-orange-600 to-red-700',
+  'from-violet-500 to-purple-700': 'from-violet-500 to-purple-700',
+  'from-slate-500 to-blue-600': 'from-slate-500 to-blue-600',
+  'from-blue-600 to-indigo-700': 'from-blue-600 to-indigo-700',
 };
 
 const HOW_IT_WORKS = [
