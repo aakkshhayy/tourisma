@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { STATES, PLACES } from '../data/places';
+import { ArrowRight, Map, MapPin, Sparkles, Wallet, Compass, Star } from 'lucide-react';
 
 const GRADIENT_CLASSES: Record<string, string> = {
   'from-orange-500 to-red-600': 'from-orange-500 to-red-600',
@@ -24,143 +25,220 @@ const GRADIENT_CLASSES: Record<string, string> = {
 };
 
 const HOW_IT_WORKS = [
-  { step: '01', icon: '🗺️', title: 'Browse Destinations', desc: `Explore tourist places across ${STATES.length} Indian states with detailed info on each location.` },
-  { step: '02', icon: '📍', title: 'Select Places', desc: 'Pick the places you want to visit. Mix and match across states freely.' },
-  { step: '03', icon: '🗓️', title: 'Build Itinerary', desc: 'We generate a smart, geographically optimized day-by-day travel plan for you.' },
-  { step: '04', icon: '💰', title: 'Estimate Costs', desc: 'Get a realistic breakdown of travel, stay, food, and entry costs for your trip.' },
+  { step: '01', icon: Map, title: 'Browse Destinations', desc: `Explore ${PLACES.length}+ tourist places across ${STATES.length} Indian states with rich detail on each.` },
+  { step: '02', icon: MapPin, title: 'Select Places', desc: 'Pick everywhere you want to visit. Mix and match across states freely.' },
+  { step: '03', icon: Sparkles, title: 'Build Itinerary', desc: 'We generate a smart, geographically optimised day-by-day plan in seconds.' },
+  { step: '04', icon: Wallet, title: 'Estimate Costs', desc: 'Realistic breakdown of travel, stay, food, and entry costs for your trip.' },
 ];
 
 export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-orange-600 via-orange-500 to-amber-400 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px',
-          }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-          <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium mb-6">
-            🇮🇳 {STATES.length} States · {PLACES.length}+ Destinations · Infinite Memories
-          </div>
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-tight">
-            Explore India,<br />
-            <span className="text-yellow-200">Your Way</span>
-          </h1>
-          <p className="text-xl sm:text-2xl text-orange-100 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Plan the perfect Indian trip with smart itineraries, realistic cost estimates, and curated recommendations across {STATES.length} states — from the Himalayas to Kerala's backwaters.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/explore"
-              className="inline-block bg-white text-orange-600 font-bold text-lg px-8 py-4 rounded-2xl hover:bg-orange-50 transition-colors shadow-lg"
-            >
-              Start Exploring →
-            </Link>
-            <Link
-              to="/itinerary"
-              className="inline-block bg-white/20 backdrop-blur-sm text-white font-bold text-lg px-8 py-4 rounded-2xl hover:bg-white/30 transition-colors border border-white/30"
-            >
-              Build Itinerary
-            </Link>
-          </div>
-        </div>
+      <section className="relative overflow-hidden bg-sand pt-12 sm:pt-16 lg:pt-20 pb-24">
+        {/* Decorative blurs */}
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-saffron/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-amber-300/20 rounded-full blur-3xl" />
 
-        {/* Wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 80L1440 80L1440 40C1200 80 960 0 720 40C480 80 240 0 0 40L0 80Z" fill="#FFF8F0" />
-          </svg>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="bg-white border-b border-orange-100">
-        <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-          {[
-            { label: 'States Covered', value: `${STATES.length}` },
-            { label: 'Destinations', value: `${PLACES.length}+` },
-            { label: 'Categories', value: '7' },
-            { label: 'Free to Use', value: '100%' },
-          ].map(s => (
-            <div key={s.label}>
-              <div className="text-3xl font-black text-orange-500">{s.value}</div>
-              <div className="text-sm text-gray-500 font-medium">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Explore States */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-black text-gray-900 mb-3">Discover by State</h2>
-          <p className="text-gray-500 text-lg">{STATES.length} incredible states, each with its own unique flavour</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {STATES.map(state => (
-            <Link
-              key={state.id}
-              to={`/explore?state=${state.id}`}
-              className="group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300"
-            >
-              <div className={`bg-gradient-to-br ${GRADIENT_CLASSES[state.coverGradient] ?? 'from-gray-500 to-gray-700'} p-8 text-white h-48 flex flex-col justify-between`}>
-                <div className="text-5xl group-hover:scale-110 transition-transform duration-300">{state.emoji}</div>
-                <div>
-                  <h3 className="text-2xl font-black">{state.name}</h3>
-                  <p className="text-white/80 text-sm">{PLACES.filter(p => p.state === state.id).length} destinations</p>
-                </div>
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7">
+              <div className="inline-flex items-center gap-2 bg-white border border-ink-100 px-3 py-1.5 rounded-full text-xs font-semibold text-ink-600 mb-6 shadow-soft">
+                <Sparkles className="w-3.5 h-3.5 text-saffron" strokeWidth={2.5} />
+                <span>Smart itineraries · {STATES.length} states · {PLACES.length}+ places</span>
               </div>
-              <div className="bg-white p-4">
-                <p className="text-gray-600 text-sm line-clamp-2">{state.description}</p>
-                <span className="mt-3 inline-flex items-center text-orange-600 font-semibold text-sm">
-                  Explore {state.name} →
+
+              <h1 className="font-display font-extrabold text-ink-900 text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
+                Plan your perfect
+                <br />
+                <span className="bg-gradient-to-r from-saffron via-orange-500 to-amber-500 bg-clip-text text-transparent">
+                  Indian journey.
                 </span>
+              </h1>
+
+              <p className="mt-6 text-ink-600 text-lg sm:text-xl max-w-xl leading-relaxed">
+                Mix destinations across states. Get a smart day-by-day route, realistic cost breakdown, and curated recommendations — built for the modern traveller.
+              </p>
+
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <Link
+                  to="/explore"
+                  className="group inline-flex items-center justify-center gap-2 bg-ink-900 text-white font-bold px-7 py-4 rounded-2xl hover:bg-ink-600 transition-all shadow-soft"
+                >
+                  Start exploring
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+                </Link>
+                <Link
+                  to="/itinerary"
+                  className="inline-flex items-center justify-center gap-2 bg-white border border-ink-200 text-ink-900 font-bold px-7 py-4 rounded-2xl hover:border-saffron hover:text-saffron transition-all"
+                >
+                  <Sparkles className="w-4 h-4" strokeWidth={2.5} />
+                  Build itinerary
+                </Link>
               </div>
+
+              {/* Stat strip */}
+              <div className="mt-10 grid grid-cols-3 gap-3 max-w-md">
+                {[
+                  { value: STATES.length, label: 'States' },
+                  { value: `${PLACES.length}+`, label: 'Destinations' },
+                  { value: '7', label: 'Categories' },
+                ].map(s => (
+                  <div key={s.label} className="bg-white rounded-2xl px-4 py-3 border border-ink-100">
+                    <div className="text-2xl font-extrabold text-ink-900">{s.value}</div>
+                    <div className="text-xs text-ink-400 font-semibold uppercase tracking-wider">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hero collage */}
+            <div className="lg:col-span-5 relative">
+              <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                {STATES.slice(0, 4).map((s, i) => (
+                  <Link
+                    key={s.id}
+                    to={`/explore?state=${s.id}`}
+                    className={`relative rounded-3xl bg-gradient-to-br ${GRADIENT_CLASSES[s.coverGradient] ?? 'from-gray-500 to-gray-700'} aspect-[4/5] p-5 text-white overflow-hidden group hover:scale-[1.02] transition-transform shadow-card
+                      ${i % 2 === 0 ? 'translate-y-4' : ''}`}
+                  >
+                    <div className="text-4xl mb-2">{s.emoji}</div>
+                    <div className="absolute bottom-5 left-5 right-5">
+                      <div className="text-xs font-semibold opacity-80 uppercase tracking-wider">India</div>
+                      <div className="text-lg font-extrabold leading-tight">{s.name}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div className="absolute -top-4 -right-4 bg-white rounded-2xl shadow-card px-4 py-3 flex items-center gap-2 hidden sm:flex">
+                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-emerald-600 fill-emerald-600" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-ink-900">100% Free</div>
+                  <div className="text-[10px] text-ink-400 uppercase font-semibold tracking-wider">No signup</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Discover by state */}
+      <section className="bg-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-saffron mb-3">
+                <Compass className="w-4 h-4" strokeWidth={2.5} />
+                Browse by state
+              </div>
+              <h2 className="font-display font-extrabold text-ink-900 text-4xl sm:text-5xl">
+                Discover {STATES.length} incredible regions
+              </h2>
+            </div>
+            <Link to="/explore" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-ink-900 hover:text-saffron transition-colors">
+              See all destinations
+              <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
             </Link>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {STATES.map(state => {
+              const placeCount = PLACES.filter(p => p.state === state.id).length;
+              return (
+                <Link
+                  key={state.id}
+                  to={`/explore?state=${state.id}`}
+                  className="group relative overflow-hidden rounded-3xl bg-white border border-ink-100 hover:border-transparent hover:shadow-card transition-all duration-300"
+                >
+                  <div className={`relative bg-gradient-to-br ${GRADIENT_CLASSES[state.coverGradient] ?? 'from-gray-500 to-gray-700'} h-44 p-6 text-white flex flex-col justify-between overflow-hidden`}>
+                    <div className="absolute -bottom-10 -right-6 text-[120px] opacity-20 leading-none">{state.emoji}</div>
+                    <div className="text-4xl drop-shadow-sm group-hover:scale-110 transition-transform duration-500 z-10">{state.emoji}</div>
+                    <div className="z-10">
+                      <h3 className="text-2xl font-extrabold leading-tight">{state.name}</h3>
+                      <div className="flex items-center gap-1.5 mt-1 text-sm font-medium text-white/85">
+                        <MapPin className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        {placeCount} destinations
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <p className="text-ink-600 text-sm line-clamp-2 leading-relaxed">{state.description}</p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-saffron font-bold text-sm">
+                      Explore {state.name}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="bg-white py-20">
+      <section className="bg-sand py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-black text-gray-900 mb-3">How Tourisma Works</h2>
-            <p className="text-gray-500 text-lg">Plan your dream India trip in 4 simple steps</p>
+          <div className="text-center mb-14 max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-saffron mb-3">
+              <Sparkles className="w-4 h-4" strokeWidth={2.5} />
+              How it works
+            </div>
+            <h2 className="font-display font-extrabold text-ink-900 text-4xl sm:text-5xl">
+              Your trip, planned in 4 steps
+            </h2>
+            <p className="mt-4 text-ink-600 text-lg">
+              From browsing to a complete cost-broken-down day-by-day plan.
+            </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {HOW_IT_WORKS.map(item => (
-              <div key={item.step} className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-50 rounded-2xl text-3xl mb-4">
-                  {item.icon}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {HOW_IT_WORKS.map(item => {
+              const Icon = item.icon;
+              return (
+                <div key={item.step} className="bg-white rounded-3xl p-6 border border-ink-100 hover:border-saffron/30 hover:shadow-soft transition-all">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-12 h-12 rounded-2xl bg-saffron/10 flex items-center justify-center">
+                      <Icon className="w-6 h-6 text-saffron" strokeWidth={2.2} />
+                    </div>
+                    <span className="text-3xl font-extrabold text-ink-100">{item.step}</span>
+                  </div>
+                  <h3 className="font-extrabold text-ink-900 text-lg mb-2">{item.title}</h3>
+                  <p className="text-ink-400 text-sm leading-relaxed">{item.desc}</p>
                 </div>
-                <div className="text-xs font-bold text-orange-400 mb-1">STEP {item.step}</div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm">{item.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
           <div className="text-center mt-12">
             <Link
               to="/explore"
-              className="inline-block bg-orange-500 text-white font-bold text-lg px-10 py-4 rounded-2xl hover:bg-orange-600 transition-colors shadow-lg"
+              className="group inline-flex items-center gap-2 bg-ink-900 text-white font-bold text-base px-8 py-4 rounded-2xl hover:bg-ink-600 transition-all shadow-soft"
             >
-              Start Planning Your Trip →
+              Start planning your trip
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
             </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-10 text-center">
-        <div className="text-2xl mb-2">🗺️ <span className="text-white font-bold">Tourisma</span></div>
-        <p className="text-sm">India Travel Planning · MVP · Made with ❤️ for explorers</p>
-        <p className="text-xs mt-2">Cost estimates are approximate and for planning purposes only.</p>
+      <footer className="bg-ink-900 text-ink-100 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-saffron to-amber-500 flex items-center justify-center">
+                <Compass className="w-5 h-5 text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <div className="text-lg font-extrabold text-white">Tourisma</div>
+                <div className="text-[10px] uppercase tracking-widest text-ink-200 font-semibold">India travel planning</div>
+              </div>
+            </div>
+            <p className="text-sm text-ink-200">Made with ❤️ for explorers · Cost estimates are approximate.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
