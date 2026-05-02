@@ -57,7 +57,7 @@ export default function Explore() {
             {activeStateInfo ? `${activeStateInfo.emoji} ${activeStateInfo.name}` : '🗺️ Explore India'}
           </h1>
           <p className="text-orange-100 text-lg">
-            {activeStateInfo ? activeStateInfo.description : 'Browse destinations across 5 incredible Indian states'}
+            {activeStateInfo ? activeStateInfo.description : `Browse ${PLACES.length}+ destinations across ${STATES.length} incredible Indian states`}
           </p>
         </div>
       </div>

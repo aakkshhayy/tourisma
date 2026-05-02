@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { STATES } from '../data/places';
+import { STATES, PLACES } from '../data/places';
 
 const GRADIENT_CLASSES: Record<string, string> = {
   'from-orange-500 to-red-600': 'from-orange-500 to-red-600',
@@ -7,10 +7,14 @@ const GRADIENT_CLASSES: Record<string, string> = {
   'from-yellow-500 to-orange-500': 'from-yellow-500 to-orange-500',
   'from-green-600 to-teal-600': 'from-green-600 to-teal-600',
   'from-purple-600 to-indigo-600': 'from-purple-600 to-indigo-600',
+  'from-rose-500 to-pink-600': 'from-rose-500 to-pink-600',
+  'from-red-600 to-yellow-500': 'from-red-600 to-yellow-500',
+  'from-amber-500 to-red-500': 'from-amber-500 to-red-500',
+  'from-green-500 to-emerald-600': 'from-green-500 to-emerald-600',
 };
 
 const HOW_IT_WORKS = [
-  { step: '01', icon: '🗺️', title: 'Browse Destinations', desc: 'Explore tourist places across 5 Indian states with detailed info on each location.' },
+  { step: '01', icon: '🗺️', title: 'Browse Destinations', desc: `Explore tourist places across ${STATES.length} Indian states with detailed info on each location.` },
   { step: '02', icon: '📍', title: 'Select Places', desc: 'Pick the places you want to visit. Mix and match across states freely.' },
   { step: '03', icon: '🗓️', title: 'Build Itinerary', desc: 'We generate a smart, geographically optimized day-by-day travel plan for you.' },
   { step: '04', icon: '💰', title: 'Estimate Costs', desc: 'Get a realistic breakdown of travel, stay, food, and entry costs for your trip.' },
@@ -29,14 +33,14 @@ export default function Home() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
           <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium mb-6">
-            🇮🇳 5 States · 28 Destinations · Infinite Memories
+            🇮🇳 {STATES.length} States · {PLACES.length}+ Destinations · Infinite Memories
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-tight">
             Explore India,<br />
             <span className="text-yellow-200">Your Way</span>
           </h1>
           <p className="text-xl sm:text-2xl text-orange-100 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Plan the perfect Indian trip with smart itineraries, realistic cost estimates, and curated recommendations across Maharashtra, Sikkim, Andhra Pradesh, West Bengal & Bihar.
+            Plan the perfect Indian trip with smart itineraries, realistic cost estimates, and curated recommendations across {STATES.length} states — from the Himalayas to Kerala's backwaters.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -66,8 +70,8 @@ export default function Home() {
       <section className="bg-white border-b border-orange-100">
         <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
           {[
-            { label: 'States Covered', value: '5' },
-            { label: 'Destinations', value: '28+' },
+            { label: 'States Covered', value: `${STATES.length}` },
+            { label: 'Destinations', value: `${PLACES.length}+` },
             { label: 'Categories', value: '7' },
             { label: 'Free to Use', value: '100%' },
           ].map(s => (
@@ -83,7 +87,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-black text-gray-900 mb-3">Discover by State</h2>
-          <p className="text-gray-500 text-lg">Five incredible states, each with its own unique flavour</p>
+          <p className="text-gray-500 text-lg">{STATES.length} incredible states, each with its own unique flavour</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -97,7 +101,7 @@ export default function Home() {
                 <div className="text-5xl group-hover:scale-110 transition-transform duration-300">{state.emoji}</div>
                 <div>
                   <h3 className="text-2xl font-black">{state.name}</h3>
-                  <p className="text-white/80 text-sm">{state.placesCount} destinations</p>
+                  <p className="text-white/80 text-sm">{PLACES.filter(p => p.state === state.id).length} destinations</p>
                 </div>
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
               </div>
