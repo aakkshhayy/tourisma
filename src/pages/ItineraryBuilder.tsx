@@ -4,11 +4,12 @@ import { useItineraryStore } from '../store/itineraryStore';
 import { generateItinerary } from '../utils/itineraryGenerator';
 import { Itinerary } from '../types';
 import { PLACES, getStateById } from '../data/places';
+import { ORIGIN_CITIES, getOriginById } from '../data/origins';
 import {
   Sparkles, Calendar, Users, Hotel, Train, Bus, Car,
   Wallet, MapPin, Plus, Check, X, ArrowRight, Lightbulb,
   Printer, ChevronLeft, Plane, Utensils, Ticket, Package,
-  TrendingUp, Map as MapIcon, Compass,
+  TrendingUp, Map as MapIcon, Compass, Home as HomeIcon, Route, Clock,
 } from 'lucide-react';
 
 const TRAVEL_ICONS_LR: Record<string, typeof Train> = {
@@ -162,6 +163,48 @@ export default function ItineraryBuilder() {
             <div>
               <h2 className="font-display text-2xl font-extrabold text-ink-900 leading-tight">Configure your trip</h2>
               <p className="text-ink-400 text-sm mt-1">Set duration, group size, and preferences</p>
+            </div>
+          </div>
+
+          {/* Origin city — KILLER FEATURE */}
+          <div className="mb-4 bg-gradient-to-br from-saffron/5 to-amber-50 rounded-2xl p-5 border-2 border-saffron/20">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-saffron/15 flex items-center justify-center">
+                  <HomeIcon className="w-4 h-4 text-saffron" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <label className="text-sm font-extrabold text-ink-900 leading-tight block">Plan from my city</label>
+                  <p className="text-[11px] text-ink-400">We'll route your full journey there & back</p>
+                </div>
+              </div>
+              {(() => {
+                const origin = getOriginById(options.originCityId);
+                return origin ? (
+                  <span className="inline-flex items-center gap-1.5 bg-white border border-saffron/30 px-3 py-1 rounded-full text-xs font-bold text-ink-900 shadow-soft">
+                    <span>{origin.emoji}</span>
+                    {origin.name}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {ORIGIN_CITIES.map(o => {
+                const sel = options.originCityId === o.id;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => setOptions({ originCityId: o.id })}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all
+                      ${sel
+                        ? 'bg-saffron text-white shadow-glow'
+                        : 'bg-white text-ink-600 border border-ink-100 hover:border-saffron/40'}`}
+                  >
+                    <span>{o.emoji}</span>
+                    {o.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -325,6 +368,106 @@ export default function ItineraryBuilder() {
                 </div>
               </div>
             </section>
+
+            {/* Journey route — from origin city */}
+            {itinerary.journey.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-soft">
+                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-saffron/10 flex items-center justify-center">
+                      <Route className="w-5 h-5 text-saffron" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <h2 className="font-display text-2xl font-extrabold text-ink-900 leading-tight">Travel route</h2>
+                      <p className="text-ink-400 text-sm">
+                        {(() => {
+                          const o = getOriginById(options.originCityId);
+                          return o ? `From ${o.emoji} ${o.name} · round trip` : 'Round trip';
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="bg-ink-50/50 rounded-2xl px-4 py-2.5 border border-ink-100">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-ink-400">
+                        <Route className="w-3 h-3" strokeWidth={2.5} />
+                        Distance
+                      </div>
+                      <div className="font-extrabold text-ink-900 text-lg leading-tight">
+                        {itinerary.totalDistanceKm.toLocaleString()} <span className="text-xs text-ink-400 font-bold">km</span>
+                      </div>
+                    </div>
+                    <div className="bg-ink-50/50 rounded-2xl px-4 py-2.5 border border-ink-100">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-ink-400">
+                        <Clock className="w-3 h-3" strokeWidth={2.5} />
+                        Travel time
+                      </div>
+                      <div className="font-extrabold text-ink-900 text-lg leading-tight">
+                        {Math.floor(itinerary.totalTravelHours)}<span className="text-xs text-ink-400 font-bold">h </span>
+                        {Math.round((itinerary.totalTravelHours % 1) * 60)}<span className="text-xs text-ink-400 font-bold">m</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legs */}
+                <div className="space-y-2.5">
+                  {itinerary.journey.map((leg, i) => {
+                    const Icon = leg.mode === 'flight' ? Plane : leg.mode === 'bus' ? Bus : leg.mode === 'cab' ? Car : Train;
+                    const modeColor = leg.mode === 'flight'
+                      ? 'bg-sky-50 text-sky-700 border-sky-100'
+                      : leg.mode === 'bus'
+                        ? 'bg-amber-50 text-amber-700 border-amber-100'
+                        : leg.mode === 'cab'
+                          ? 'bg-violet-50 text-violet-700 border-violet-100'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                    return (
+                      <div key={i} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 ${leg.isReturn ? 'bg-ink-50/50 border-dashed border-ink-200' : 'bg-white border-ink-100'}`}>
+                        {/* Leg index */}
+                        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-ink-900 text-white flex items-center justify-center text-xs font-extrabold">
+                          {i + 1}
+                        </div>
+
+                        {/* From → To */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 text-sm font-bold text-ink-900 truncate">
+                            <span className="truncate">{leg.from}</span>
+                            <ArrowRight className="w-3.5 h-3.5 text-saffron flex-shrink-0" strokeWidth={2.5} />
+                            <span className="truncate">{leg.to}</span>
+                            {leg.isReturn && (
+                              <span className="ml-1 text-[10px] uppercase font-bold tracking-widest text-ink-400 bg-ink-100 px-1.5 py-0.5 rounded">return</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-ink-400 mt-0.5">
+                            <span className="inline-flex items-center gap-1">
+                              <Route className="w-3 h-3" strokeWidth={2.2} />
+                              {leg.distanceKm.toLocaleString()} km
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" strokeWidth={2.2} />
+                              {Math.floor(leg.durationHours)}h {Math.round((leg.durationHours % 1) * 60)}m
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Mode pill */}
+                        <div className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border ${modeColor}`}>
+                          <Icon className="w-3 h-3" strokeWidth={2.5} />
+                          {leg.mode}
+                        </div>
+
+                        {/* Cost */}
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-extrabold text-ink-900 text-sm tabular-nums">₹{leg.cost.toLocaleString()}</div>
+                          <div className="text-[10px] text-ink-400 font-semibold uppercase tracking-wider">per ticket</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* Cost breakdown */}
             <section className="bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-soft">

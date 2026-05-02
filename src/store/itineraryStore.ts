@@ -19,6 +19,7 @@ export const useItineraryStore = create<ItineraryStore>((set, get) => ({
     travelMode: 'train',
     groupSize: 2,
     numDays: 5,
+    originCityId: 'delhi',
   },
 
   addPlace: (place) =>

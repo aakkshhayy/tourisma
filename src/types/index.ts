@@ -37,6 +37,15 @@ export interface StateInfo {
   placesCount: number;
 }
 
+export interface OriginCity {
+  id: string;
+  name: string;
+  state: string;
+  coordinates: { lat: number; lng: number };
+  emoji: string;
+  hasAirport: boolean;
+}
+
 export interface ItineraryDay {
   day: number;
   places: TouristPlace[];
@@ -44,11 +53,26 @@ export interface ItineraryDay {
   estimatedTravelCost: number;
 }
 
+export interface JourneyLeg {
+  from: string;
+  to: string;
+  fromCoords: { lat: number; lng: number };
+  toCoords: { lat: number; lng: number };
+  distanceKm: number;
+  durationHours: number;
+  cost: number;
+  mode: 'train' | 'bus' | 'cab' | 'flight';
+  isReturn?: boolean;
+}
+
 export interface Itinerary {
   days: ItineraryDay[];
   totalEstimatedCost: CostBreakdown;
   route: string[];
   tips: string[];
+  journey: JourneyLeg[];
+  totalDistanceKm: number;
+  totalTravelHours: number;
 }
 
 export interface CostBreakdown {
@@ -65,4 +89,5 @@ export interface ItineraryOptions {
   travelMode: 'train' | 'bus' | 'cab';
   groupSize: number;
   numDays: number;
+  originCityId: string;
 }

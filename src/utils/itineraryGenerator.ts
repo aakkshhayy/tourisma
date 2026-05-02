@@ -1,6 +1,6 @@
-import { TouristPlace, Itinerary, ItineraryDay, CostBreakdown, ItineraryOptions } from '../types';
+import { TouristPlace, Itinerary, ItineraryDay, CostBreakdown, ItineraryOptions, JourneyLeg } from '../types';
+import { getOriginById } from '../data/origins';
 
-// Rough geographic travel order (north → south, east → west within south)
 const STATE_ORDER: Record<string, number> = {
   himachal_pradesh: 1,
   haryana: 2,
@@ -23,25 +23,19 @@ const STATE_ORDER: Record<string, number> = {
   kerala: 19,
 };
 
-// Group nearby places (same state, physically close) together
 function clusterPlaces(places: TouristPlace[]): TouristPlace[][] {
   const byState: Record<string, TouristPlace[]> = {};
   for (const p of places) {
     if (!byState[p.state]) byState[p.state] = [];
     byState[p.state].push(p);
   }
-
-  // Sort states in logical travel order (roughly geographic)
   const sortedStates = Object.keys(byState).sort(
     (a, b) => (STATE_ORDER[a] ?? 99) - (STATE_ORDER[b] ?? 99)
   );
-
   return sortedStates.map(s => byState[s]);
 }
 
 function distributeIntodays(clusters: TouristPlace[][], numDays: number): ItineraryDay[] {
-  // Expand each place into individual day slots based on recommendedDays
-  // e.g. Gangtok (3 days) → [Gangtok, Gangtok, Gangtok], Lachung (2 days) → [Lachung, Lachung]
   const schedule: Array<{ place: TouristPlace; placeDay: number }> = [];
   for (const cluster of clusters) {
     for (const place of cluster) {
@@ -56,7 +50,6 @@ function distributeIntodays(clusters: TouristPlace[][], numDays: number): Itiner
   const days: ItineraryDay[] = [];
 
   for (let dayIndex = 1; dayIndex <= numDays; dayIndex++) {
-    // Map each requested day proportionally onto the schedule
     const scheduleIndex = Math.min(
       Math.floor(((dayIndex - 1) / numDays) * schedule.length),
       schedule.length - 1
@@ -70,29 +63,20 @@ function distributeIntodays(clusters: TouristPlace[][], numDays: number): Itiner
 
     if (dayIndex === 1) {
       travelNote = `Arrive at ${place.name}. Check-in and evening at leisure to acclimatize.`;
-      travelCost = place.travelOptions[0]?.approxCost ?? 0;
     } else if (prevPlace && prevPlace.id !== place.id) {
-      // Transitioning to a new place
       if (prevPlace.state !== place.state) {
         travelNote = `Travel from ${prevPlace.name} (${formatState(prevPlace.state)}) to ${place.name} (${formatState(place.state)}). Inter-state travel day.`;
       } else {
         travelNote = `Travel from ${prevPlace.name} to ${place.name}. Check-in and settle in.`;
       }
-      travelCost = place.travelOptions[0]?.approxCost ?? 0;
     } else {
-      // Continuing at the same place
       const activities = place.highlights.slice((placeDay - 1) * 2, (placeDay - 1) * 2 + 2);
       travelNote = activities.length > 0
         ? `Day ${placeDay} in ${place.name} — explore ${activities.join(' and ')}.`
         : `Day ${placeDay} in ${place.name}. Continue exploring nearby attractions.`;
     }
 
-    days.push({
-      day: dayIndex,
-      places: [place],
-      travelNote,
-      estimatedTravelCost: travelCost,
-    });
+    days.push({ day: dayIndex, places: [place], travelNote, estimatedTravelCost: travelCost });
   }
 
   return days;
@@ -102,41 +86,127 @@ function formatState(stateId: string): string {
   return stateId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
-function computeCosts(days: ItineraryDay[], options: ItineraryOptions): CostBreakdown {
-  const { stayType, groupSize, numDays } = options;
+// ─── JOURNEY ROUTING ─────────────────────────────────────────────────────────
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.asin(Math.sqrt(h)));
+}
 
+interface ModeProfile {
+  mode: 'train' | 'bus' | 'cab' | 'flight';
+  speedKmph: number;
+  perKm: number;
+  base: number;
+  bufferHours: number;
+}
+
+const MODE_PROFILES: Record<string, ModeProfile> = {
+  train:  { mode: 'train',  speedKmph: 55, perKm: 2.2, base: 60,   bufferHours: 0.5 },
+  bus:    { mode: 'bus',    speedKmph: 42, perKm: 2.5, base: 50,   bufferHours: 0.3 },
+  cab:    { mode: 'cab',    speedKmph: 50, perKm: 14,  base: 0,    bufferHours: 0.2 },
+  flight: { mode: 'flight', speedKmph: 700, perKm: 4.5, base: 2200, bufferHours: 2.5 },
+};
+
+// Road-distance approximation: India's road network has ~25-30% detour vs straight line
+const ROAD_FACTOR = 1.28;
+
+function pickMode(distanceKm: number, preferred: ItineraryOptions['travelMode']): ModeProfile {
+  // Auto-upgrade to flight for very long legs
+  if (distanceKm > 1100) return MODE_PROFILES.flight;
+  // Cab is impractical above ~600km — fallback to train
+  if (preferred === 'cab' && distanceKm > 600) return MODE_PROFILES.train;
+  return MODE_PROFILES[preferred];
+}
+
+function computeLeg(
+  fromName: string,
+  fromCoords: { lat: number; lng: number },
+  toName: string,
+  toCoords: { lat: number; lng: number },
+  preferred: ItineraryOptions['travelMode'],
+  isReturn: boolean = false,
+): JourneyLeg {
+  const straightKm = haversineKm(fromCoords, toCoords);
+  const profile = pickMode(straightKm, preferred);
+  // Flights use straight-line; ground modes use road-adjusted distance
+  const distanceKm = profile.mode === 'flight' ? straightKm : Math.round(straightKm * ROAD_FACTOR);
+  const durationHours = +(distanceKm / profile.speedKmph + profile.bufferHours).toFixed(1);
+  const cost = Math.round(profile.base + distanceKm * profile.perKm);
+
+  return {
+    from: fromName,
+    to: toName,
+    fromCoords,
+    toCoords,
+    distanceKm,
+    durationHours,
+    cost,
+    mode: profile.mode,
+    isReturn,
+  };
+}
+
+function buildJourney(
+  origin: { name: string; coordinates: { lat: number; lng: number } } | undefined,
+  routePlaces: TouristPlace[],
+  preferred: ItineraryOptions['travelMode'],
+): JourneyLeg[] {
+  if (routePlaces.length === 0) return [];
+  const legs: JourneyLeg[] = [];
+
+  if (origin) {
+    legs.push(computeLeg(origin.name, origin.coordinates, routePlaces[0].name, routePlaces[0].coordinates, preferred));
+  }
+
+  for (let i = 0; i < routePlaces.length - 1; i++) {
+    const a = routePlaces[i];
+    const b = routePlaces[i + 1];
+    legs.push(computeLeg(a.name, a.coordinates, b.name, b.coordinates, preferred));
+  }
+
+  if (origin && routePlaces.length > 0) {
+    const last = routePlaces[routePlaces.length - 1];
+    legs.push(computeLeg(last.name, last.coordinates, origin.name, origin.coordinates, preferred, true));
+  }
+
+  return legs;
+}
+
+// ─── COST ────────────────────────────────────────────────────────────────────
+function computeCosts(days: ItineraryDay[], journey: JourneyLeg[], options: ItineraryOptions): CostBreakdown {
+  const { stayType, groupSize } = options;
   const stayMultiplier = stayType === 'budget' ? 0 : stayType === 'mid' ? 1 : 2;
 
-  let travel = 0;
   let stay = 0;
   let food = 0;
   let entry = 0;
 
   for (const day of days) {
     for (const place of day.places) {
-      // Stay cost
       const stayOpt = place.stayOptions[stayMultiplier] ?? place.stayOptions[0];
       stay += stayOpt.costPerNight;
-
-      // Food
       food += place.foodCostPerDay;
-
-      // Entry
       entry += place.entryFee;
-
-      // Travel — find best option matching preferred mode
-      const preferred = place.travelOptions.find(o => o.mode === options.travelMode);
-      const cheapest = place.travelOptions[0];
-      const travelOpt = preferred ?? cheapest;
-      if (travelOpt) travel += travelOpt.approxCost;
     }
   }
 
-  // Scale by group size (stay is per room ~2 pax, food & travel per person)
+  const journeyTravel = journey.reduce((sum, l) => sum + l.cost, 0);
+
   const rooms = Math.ceil(groupSize / 2);
   const scaledStay = stay * rooms;
   const scaledFood = food * groupSize;
-  const scaledTravel = travel * Math.ceil(groupSize / 4); // cab shared by 4
+  // Flights are per-person; ground modes are typically shared by ~4
+  const scaledTravel = journey.reduce((sum, l) => {
+    if (l.mode === 'flight') return sum + l.cost * groupSize;
+    return sum + l.cost * Math.ceil(groupSize / 4);
+  }, 0) || journeyTravel;
+
   const misc = Math.round((scaledStay + scaledFood + scaledTravel) * 0.08);
 
   return {
@@ -174,9 +244,45 @@ function buildTips(places: TouristPlace[]): string[] {
 export function generateItinerary(places: TouristPlace[], options: ItineraryOptions): Itinerary {
   const clusters = clusterPlaces(places);
   const days = distributeIntodays(clusters, options.numDays);
-  const costs = computeCosts(days, options);
-  const route = [...new Set(days.flatMap(d => d.places.map(p => p.name)))];
+  const routePlaces: TouristPlace[] = [];
+  const seen = new Set<string>();
+  for (const d of days) {
+    for (const p of d.places) {
+      if (!seen.has(p.id)) {
+        seen.add(p.id);
+        routePlaces.push(p);
+      }
+    }
+  }
+
+  const origin = getOriginById(options.originCityId);
+  const journey = buildJourney(origin, routePlaces, options.travelMode);
+
+  // Annotate each day with the cost of travelling INTO that place
+  // journey legs sequence: [origin→p1, p1→p2, ..., p(n-1)→pn, pn→origin?]
+  // Day 1 = origin → p1 (leg 0); day with first new place uses next leg
+  let legCursor = 0;
+  let prevPlaceId: string | null = null;
+  for (let i = 0; i < days.length; i++) {
+    const dayPlaceId = days[i].places[0].id;
+    if (i === 0) {
+      days[i].estimatedTravelCost = journey[legCursor]?.cost ?? 0;
+      if (origin) legCursor++;
+    } else if (prevPlaceId && prevPlaceId !== dayPlaceId) {
+      days[i].estimatedTravelCost = journey[legCursor]?.cost ?? 0;
+      legCursor++;
+    } else {
+      days[i].estimatedTravelCost = 0;
+    }
+    prevPlaceId = dayPlaceId;
+  }
+
+  const costs = computeCosts(days, journey, options);
+  const route = routePlaces.map(p => p.name);
   const tips = buildTips(places);
 
-  return { days, totalEstimatedCost: costs, route, tips };
+  const totalDistanceKm = journey.reduce((s, l) => s + l.distanceKm, 0);
+  const totalTravelHours = +(journey.reduce((s, l) => s + l.durationHours, 0).toFixed(1));
+
+  return { days, totalEstimatedCost: costs, route, tips, journey, totalDistanceKm, totalTravelHours };
 }
