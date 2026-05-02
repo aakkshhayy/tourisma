@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const t = require\\('/Users/akshay/Desktop/Tourisma/node_modules/tailwindcss/package.json'\\); console.log\\(t.version\\)\")",
+      "Bash(npx vite *)",
+      "Bash(npm uninstall *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh auth *)",
+      "Bash(git init *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(git add *)"
+    ]
+  }
+}
