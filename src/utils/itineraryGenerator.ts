@@ -25,50 +25,62 @@ function clusterPlaces(places: TouristPlace[]): TouristPlace[][] {
 }
 
 function distributeIntodays(clusters: TouristPlace[][], numDays: number): ItineraryDay[] {
-  const days: ItineraryDay[] = [];
-  let dayIndex = 1;
-
+  // Expand each place into individual day slots based on recommendedDays
+  // e.g. Gangtok (3 days) → [Gangtok, Gangtok, Gangtok], Lachung (2 days) → [Lachung, Lachung]
+  const schedule: Array<{ place: TouristPlace; placeDay: number }> = [];
   for (const cluster of clusters) {
-    let i = 0;
-    while (i < cluster.length && dayIndex <= numDays) {
-      const dayPlaces: TouristPlace[] = [];
-      let daysUsed = 0;
-
-      // Fit places into days based on their recommendedDays
-      while (i < cluster.length && daysUsed < 1) {
-        dayPlaces.push(cluster[i]);
-        daysUsed += Math.min(cluster[i].recommendedDays, 1);
-        i++;
+    for (const place of cluster) {
+      for (let d = 1; d <= Math.max(1, place.recommendedDays); d++) {
+        schedule.push({ place, placeDay: d });
       }
-
-      const travelNote = buildTravelNote(dayPlaces, dayIndex, days);
-      const travelCost = dayPlaces.reduce((sum, p) => {
-        const cheapestOption = p.travelOptions[0];
-        return sum + (cheapestOption?.approxCost ?? 0);
-      }, 0);
-
-      days.push({ day: dayIndex, places: dayPlaces, travelNote, estimatedTravelCost: travelCost });
-      dayIndex++;
     }
   }
 
-  return days;
-}
+  if (schedule.length === 0) return [];
 
-function buildTravelNote(places: TouristPlace[], dayIndex: number, previousDays: ItineraryDay[]): string {
-  if (dayIndex === 1) return 'Arrival and check-in. Evening at leisure to acclimatize.';
+  const days: ItineraryDay[] = [];
 
-  const prevDay = previousDays[previousDays.length - 1];
-  if (!prevDay || prevDay.places.length === 0) return 'Travel to next destination.';
+  for (let dayIndex = 1; dayIndex <= numDays; dayIndex++) {
+    // Map each requested day proportionally onto the schedule
+    const scheduleIndex = Math.min(
+      Math.floor(((dayIndex - 1) / numDays) * schedule.length),
+      schedule.length - 1
+    );
+    const { place, placeDay } = schedule[scheduleIndex];
+    const prevDay = days[days.length - 1];
+    const prevPlace = prevDay?.places[0];
 
-  const prevPlace = prevDay.places[prevDay.places.length - 1];
-  const currPlace = places[0];
+    let travelNote: string;
+    let travelCost = 0;
 
-  if (!prevPlace || !currPlace) return 'Travel to next destination.';
-  if (prevPlace.state !== currPlace.state) {
-    return `Travel from ${prevPlace.name} (${formatState(prevPlace.state)}) to ${currPlace.name} (${formatState(currPlace.state)}). Inter-state travel day.`;
+    if (dayIndex === 1) {
+      travelNote = `Arrive at ${place.name}. Check-in and evening at leisure to acclimatize.`;
+      travelCost = place.travelOptions[0]?.approxCost ?? 0;
+    } else if (prevPlace && prevPlace.id !== place.id) {
+      // Transitioning to a new place
+      if (prevPlace.state !== place.state) {
+        travelNote = `Travel from ${prevPlace.name} (${formatState(prevPlace.state)}) to ${place.name} (${formatState(place.state)}). Inter-state travel day.`;
+      } else {
+        travelNote = `Travel from ${prevPlace.name} to ${place.name}. Check-in and settle in.`;
+      }
+      travelCost = place.travelOptions[0]?.approxCost ?? 0;
+    } else {
+      // Continuing at the same place
+      const activities = place.highlights.slice((placeDay - 1) * 2, (placeDay - 1) * 2 + 2);
+      travelNote = activities.length > 0
+        ? `Day ${placeDay} in ${place.name} — explore ${activities.join(' and ')}.`
+        : `Day ${placeDay} in ${place.name}. Continue exploring nearby attractions.`;
+    }
+
+    days.push({
+      day: dayIndex,
+      places: [place],
+      travelNote,
+      estimatedTravelCost: travelCost,
+    });
   }
-  return `Day trip to ${places.map(p => p.name).join(' & ')}. Return to base by evening.`;
+
+  return days;
 }
 
 function formatState(stateId: string): string {
