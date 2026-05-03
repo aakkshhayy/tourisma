@@ -53,6 +53,13 @@ export interface ItineraryDay {
   estimatedTravelCost: number;
 }
 
+export interface ModeOption {
+  mode: 'train' | 'bus' | 'cab' | 'flight';
+  distanceKm: number;
+  durationHours: number;
+  cost: number;
+}
+
 export interface JourneyLeg {
   from: string;
   to: string;
@@ -62,17 +69,8 @@ export interface JourneyLeg {
   durationHours: number;
   cost: number;
   mode: 'train' | 'bus' | 'cab' | 'flight';
+  options: ModeOption[];
   isReturn?: boolean;
-}
-
-export interface Itinerary {
-  days: ItineraryDay[];
-  totalEstimatedCost: CostBreakdown;
-  route: string[];
-  tips: string[];
-  journey: JourneyLeg[];
-  totalDistanceKm: number;
-  totalTravelHours: number;
 }
 
 export interface CostBreakdown {
@@ -90,4 +88,16 @@ export interface ItineraryOptions {
   groupSize: number;
   numDays: number;
   originCityId: string;
+  optimisation: 'cost' | 'balanced' | 'time';
+}
+
+export interface Itinerary {
+  days: ItineraryDay[];
+  totalEstimatedCost: CostBreakdown;
+  route: string[];
+  tips: string[];
+  journey: JourneyLeg[];
+  totalDistanceKm: number;
+  totalTravelHours: number;
+  optimisation: 'cost' | 'balanced' | 'time';
 }

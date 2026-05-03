@@ -11,7 +11,8 @@ import {
   Wallet, MapPin, Plus, Check, X, ArrowRight, Lightbulb,
   Printer, ChevronLeft, Plane, Utensils, Ticket, Package,
   TrendingUp, Map as MapIcon, Compass, Home as HomeIcon, Route, Clock,
-  Loader2, Download, Share2, Info, Wand2,
+  Loader2, Download, Share2, Info, Wand2, Zap, IndianRupee, Scale,
+  Trophy,
 } from 'lucide-react';
 
 const TRAVEL_ICONS_LR: Record<string, typeof Train> = {
@@ -408,6 +409,43 @@ export default function ItineraryBuilder() {
             </div>
           </div>
 
+          {/* 🧠 Smartness layer — Optimise for */}
+          <div className="mt-4 bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-5 border-2 border-violet-100">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-violet-700" strokeWidth={2.5} />
+              </div>
+              <div>
+                <label className="text-sm font-extrabold text-ink-900 leading-tight block">Optimise route for</label>
+                <p className="text-[11px] text-ink-400">We'll pick the best mode per leg accordingly</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { id: 'cost' as const, icon: IndianRupee, label: 'Lowest cost', sub: 'Cheapest mode per leg' },
+                { id: 'balanced' as const, icon: Scale, label: 'Balanced', sub: 'Your preferred mode' },
+                { id: 'time' as const, icon: Zap, label: 'Fastest time', sub: 'Quickest mode per leg' },
+              ]).map(opt => {
+                const Icon = opt.icon;
+                const sel = options.optimisation === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setOptions({ optimisation: opt.id })}
+                    className={`flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl text-center transition-all border-2
+                      ${sel
+                        ? 'bg-violet-600 text-white border-violet-600 shadow-soft'
+                        : 'bg-white text-ink-900 border-violet-100 hover:border-violet-300'}`}
+                  >
+                    <Icon className="w-4 h-4" strokeWidth={2.5} />
+                    <span className="text-xs font-extrabold leading-tight">{opt.label}</span>
+                    <span className={`text-[10px] font-medium leading-tight ${sel ? 'text-violet-100' : 'text-ink-400'}`}>{opt.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Generate CTA */}
           <button
             onClick={handleGenerate}
@@ -556,49 +594,111 @@ export default function ItineraryBuilder() {
                   </div>
                 </div>
 
+                {/* Smart-route banner */}
+                <div className="mb-5 flex items-start gap-3 bg-gradient-to-r from-violet-50 via-purple-50 to-violet-50 border border-violet-100 rounded-2xl p-4">
+                  <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-violet-700">Smart route</div>
+                    <p className="text-sm font-bold text-ink-900 leading-snug">
+                      {itinerary.optimisation === 'time' && 'Best route selected for minimum travel time — flights chosen on long legs.'}
+                      {itinerary.optimisation === 'cost' && 'Best route selected for lowest cost — sleeper trains/buses prioritised.'}
+                      {itinerary.optimisation === 'balanced' && `Balanced route — your preferred ${options.travelMode} on shorter legs, flights auto-chosen above 1,100 km.`}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-2.5">
                   {itinerary.journey.map((leg, i) => {
-                    const Icon = leg.mode === 'flight' ? Plane : leg.mode === 'bus' ? Bus : leg.mode === 'cab' ? Car : Train;
-                    const modeColor = leg.mode === 'flight'
-                      ? 'bg-sky-50 text-sky-700 border-sky-100'
-                      : leg.mode === 'bus'
-                        ? 'bg-amber-50 text-amber-700 border-amber-100'
-                        : leg.mode === 'cab'
-                          ? 'bg-violet-50 text-violet-700 border-violet-100'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-100';
                     return (
-                      <div key={i} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 ${leg.isReturn ? 'bg-ink-50/50 border-dashed border-ink-200' : 'bg-white border-ink-100'}`}>
-                        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-ink-900 text-white flex items-center justify-center text-xs font-extrabold">
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-sm font-bold text-ink-900 truncate">
-                            <span className="truncate">{leg.from}</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-saffron flex-shrink-0" strokeWidth={2.5} />
-                            <span className="truncate">{leg.to}</span>
-                            {leg.isReturn && (
-                              <span className="ml-1 text-[10px] uppercase font-bold tracking-widest text-ink-400 bg-ink-100 px-1.5 py-0.5 rounded">return</span>
-                            )}
+                      <div key={i} className={`p-4 rounded-2xl border-2 ${leg.isReturn ? 'bg-ink-50/50 border-dashed border-ink-200' : 'bg-white border-ink-100'}`}>
+                        {/* Leg header: from → to + total km/time */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-ink-900 text-white flex items-center justify-center text-xs font-extrabold">
+                            {i + 1}
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-ink-400 mt-0.5">
-                            <span className="inline-flex items-center gap-1">
-                              <Route className="w-3 h-3" strokeWidth={2.2} />
-                              {leg.distanceKm.toLocaleString()} km
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Clock className="w-3 h-3" strokeWidth={2.2} />
-                              {Math.floor(leg.durationHours)}h {Math.round((leg.durationHours % 1) * 60)}m
-                            </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 text-sm font-extrabold text-ink-900 truncate">
+                              <span className="truncate">{leg.from}</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-saffron flex-shrink-0" strokeWidth={2.5} />
+                              <span className="truncate">{leg.to}</span>
+                              {leg.isReturn && (
+                                <span className="ml-1 text-[10px] uppercase font-bold tracking-widest text-ink-400 bg-ink-100 px-1.5 py-0.5 rounded">return</span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-ink-400 mt-0.5">
+                              Selected: <span className="font-bold text-ink-900 capitalize">{leg.mode}</span> · ₹{leg.cost.toLocaleString()} · {Math.floor(leg.durationHours)}h {Math.round((leg.durationHours % 1) * 60)}m
+                            </div>
                           </div>
                         </div>
-                        <div className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border ${modeColor}`}>
-                          <Icon className="w-3 h-3" strokeWidth={2.5} />
-                          {leg.mode}
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-extrabold text-ink-900 text-sm tabular-nums">₹{leg.cost.toLocaleString()}</div>
-                          <div className="text-[10px] text-ink-400 font-semibold uppercase tracking-wider">per ticket</div>
-                        </div>
+
+                        {/* Mode comparison strip */}
+                        {(() => {
+                          const opts = leg.options;
+                          if (opts.length === 0) return null;
+                          const cheapest = opts.reduce((a, b) => (a.cost <= b.cost ? a : b));
+                          const fastest = opts.reduce((a, b) => (a.durationHours <= b.durationHours ? a : b));
+                          return (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                              {opts.map((o, j) => {
+                                const ModeIcon = o.mode === 'flight' ? Plane : o.mode === 'bus' ? Bus : o.mode === 'cab' ? Car : Train;
+                                const isSelected = o.mode === leg.mode;
+                                const isCheapest = o.mode === cheapest.mode && o.cost === cheapest.cost;
+                                const isFastest = o.mode === fastest.mode && o.durationHours === fastest.durationHours;
+                                const isBoth = isCheapest && isFastest;
+                                return (
+                                  <div
+                                    key={j}
+                                    className={`relative p-2.5 rounded-xl border-2 transition-all
+                                      ${isSelected
+                                        ? 'border-saffron bg-saffron/5 shadow-soft'
+                                        : 'border-ink-100 bg-white'}`}
+                                  >
+                                    {isSelected && (
+                                      <div className="absolute -top-2 -right-2 bg-saffron text-white text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md shadow">
+                                        Picked
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <ModeIcon className="w-3.5 h-3.5 text-ink-600" strokeWidth={2.5} />
+                                      <span className="text-[11px] font-extrabold text-ink-900 capitalize">{o.mode}</span>
+                                    </div>
+                                    <div className="font-extrabold text-ink-900 text-sm tabular-nums leading-none">
+                                      ₹{o.cost.toLocaleString()}
+                                    </div>
+                                    <div className="text-[11px] text-ink-400 mt-0.5 tabular-nums">
+                                      {Math.floor(o.durationHours)}h {Math.round((o.durationHours % 1) * 60)}m
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                      {isBoth ? (
+                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
+                                          <Trophy className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                          Best
+                                        </span>
+                                      ) : (
+                                        <>
+                                          {isCheapest && (
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
+                                              <IndianRupee className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                              Cheapest
+                                            </span>
+                                          )}
+                                          {isFastest && (
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded">
+                                              <Zap className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                              Fastest
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

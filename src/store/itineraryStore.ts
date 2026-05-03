@@ -20,6 +20,7 @@ export const useItineraryStore = create<ItineraryStore>((set, get) => ({
     groupSize: 2,
     numDays: 5,
     originCityId: 'delhi',
+    optimisation: 'balanced',
   },
 
   addPlace: (place) =>

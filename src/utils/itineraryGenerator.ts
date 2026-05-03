@@ -1,4 +1,4 @@
-import { TouristPlace, Itinerary, ItineraryDay, CostBreakdown, ItineraryOptions, JourneyLeg } from '../types';
+import { TouristPlace, Itinerary, ItineraryDay, CostBreakdown, ItineraryOptions, JourneyLeg, ModeOption } from '../types';
 import { getOriginById } from '../data/origins';
 
 const STATE_ORDER: Record<string, number> = {
@@ -167,12 +167,49 @@ const MODE_PROFILES: Record<string, ModeProfile> = {
 // Road-distance approximation: India's road network has ~25-30% detour vs straight line
 const ROAD_FACTOR = 1.28;
 
-function pickMode(distanceKm: number, preferred: ItineraryOptions['travelMode']): ModeProfile {
-  // Auto-upgrade to flight for very long legs
-  if (distanceKm > 1100) return MODE_PROFILES.flight;
-  // Cab is impractical above ~600km — fallback to train
-  if (preferred === 'cab' && distanceKm > 600) return MODE_PROFILES.train;
-  return MODE_PROFILES[preferred];
+// Compute every viable mode for a leg so users can compare cost vs time.
+function computeAllOptions(straightKm: number): ModeOption[] {
+  const opts: ModeOption[] = [];
+  const make = (modeKey: keyof typeof MODE_PROFILES, distance: number): ModeOption => {
+    const p = MODE_PROFILES[modeKey];
+    return {
+      mode: p.mode,
+      distanceKm: Math.round(distance),
+      durationHours: +(distance / p.speedKmph + p.bufferHours).toFixed(1),
+      cost: Math.round(p.base + distance * p.perKm),
+    };
+  };
+  // Train: feasible for any distance up to ~2500km
+  opts.push(make('train', straightKm * ROAD_FACTOR));
+  // Bus: feasible up to ~1200km (anything longer is impractical overnight)
+  if (straightKm <= 1200) opts.push(make('bus', straightKm * ROAD_FACTOR));
+  // Cab: feasible up to ~600km
+  if (straightKm <= 600) opts.push(make('cab', straightKm * ROAD_FACTOR));
+  // Flight: only worthwhile above 250km straight-line
+  if (straightKm >= 250) opts.push(make('flight', straightKm));
+  return opts;
+}
+
+function pickSelectedOption(
+  options: ModeOption[],
+  strategy: ItineraryOptions['optimisation'],
+  preferred: ItineraryOptions['travelMode'],
+  straightKm: number,
+): ModeOption {
+  if (strategy === 'cost') {
+    return options.reduce((a, b) => (a.cost <= b.cost ? a : b));
+  }
+  if (strategy === 'time') {
+    return options.reduce((a, b) => (a.durationHours <= b.durationHours ? a : b));
+  }
+  // Balanced: respect user's preferred mode but auto-upgrade to flight for very long
+  if (straightKm > 1100) {
+    return options.find(o => o.mode === 'flight') ?? options[0];
+  }
+  if (preferred === 'cab' && straightKm > 600) {
+    return options.find(o => o.mode === 'train') ?? options[0];
+  }
+  return options.find(o => o.mode === preferred) ?? options[0];
 }
 
 function computeLeg(
@@ -180,25 +217,23 @@ function computeLeg(
   fromCoords: { lat: number; lng: number },
   toName: string,
   toCoords: { lat: number; lng: number },
-  preferred: ItineraryOptions['travelMode'],
+  options: ItineraryOptions,
   isReturn: boolean = false,
 ): JourneyLeg {
   const straightKm = haversineKm(fromCoords, toCoords);
-  const profile = pickMode(straightKm, preferred);
-  // Flights use straight-line; ground modes use road-adjusted distance
-  const distanceKm = profile.mode === 'flight' ? straightKm : Math.round(straightKm * ROAD_FACTOR);
-  const durationHours = +(distanceKm / profile.speedKmph + profile.bufferHours).toFixed(1);
-  const cost = Math.round(profile.base + distanceKm * profile.perKm);
+  const allOptions = computeAllOptions(straightKm);
+  const selected = pickSelectedOption(allOptions, options.optimisation, options.travelMode, straightKm);
 
   return {
     from: fromName,
     to: toName,
     fromCoords,
     toCoords,
-    distanceKm,
-    durationHours,
-    cost,
-    mode: profile.mode,
+    distanceKm: selected.distanceKm,
+    durationHours: selected.durationHours,
+    cost: selected.cost,
+    mode: selected.mode,
+    options: allOptions,
     isReturn,
   };
 }
@@ -206,24 +241,24 @@ function computeLeg(
 function buildJourney(
   origin: { name: string; coordinates: { lat: number; lng: number } } | undefined,
   routePlaces: TouristPlace[],
-  preferred: ItineraryOptions['travelMode'],
+  options: ItineraryOptions,
 ): JourneyLeg[] {
   if (routePlaces.length === 0) return [];
   const legs: JourneyLeg[] = [];
 
   if (origin) {
-    legs.push(computeLeg(origin.name, origin.coordinates, routePlaces[0].name, routePlaces[0].coordinates, preferred));
+    legs.push(computeLeg(origin.name, origin.coordinates, routePlaces[0].name, routePlaces[0].coordinates, options));
   }
 
   for (let i = 0; i < routePlaces.length - 1; i++) {
     const a = routePlaces[i];
     const b = routePlaces[i + 1];
-    legs.push(computeLeg(a.name, a.coordinates, b.name, b.coordinates, preferred));
+    legs.push(computeLeg(a.name, a.coordinates, b.name, b.coordinates, options));
   }
 
   if (origin && routePlaces.length > 0) {
     const last = routePlaces[routePlaces.length - 1];
-    legs.push(computeLeg(last.name, last.coordinates, origin.name, origin.coordinates, preferred, true));
+    legs.push(computeLeg(last.name, last.coordinates, origin.name, origin.coordinates, options, true));
   }
 
   return legs;
@@ -424,7 +459,7 @@ export function generateItinerary(places: TouristPlace[], options: ItineraryOpti
     }
   }
 
-  const journey = buildJourney(origin, routePlaces, options.travelMode);
+  const journey = buildJourney(origin, routePlaces, options);
 
   // Annotate each day with the cost of travelling INTO that place
   // journey legs sequence: [origin→p1, p1→p2, ..., p(n-1)→pn, pn→origin?]
@@ -453,5 +488,5 @@ export function generateItinerary(places: TouristPlace[], options: ItineraryOpti
 
   const tips = buildTips(places, options, totalDistanceKm);
 
-  return { days, totalEstimatedCost: costs, route, tips, journey, totalDistanceKm, totalTravelHours };
+  return { days, totalEstimatedCost: costs, route, tips, journey, totalDistanceKm, totalTravelHours, optimisation: options.optimisation };
 }
