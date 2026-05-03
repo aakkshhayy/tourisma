@@ -255,26 +255,129 @@ function computeCosts(days: ItineraryDay[], journey: JourneyLeg[], options: Itin
   };
 }
 
-function buildTips(places: TouristPlace[]): string[] {
-  const tips: string[] = [];
+// ─── DYNAMIC TIPS ────────────────────────────────────────────────────────────
+// Tips are generated based on the actual states, places, categories, trip
+// shape and origin so each itinerary surfaces what's actually relevant.
+
+const STATE_TIPS: Record<string, string> = {
+  sikkim: 'Carry your photo ID + 2 passport photos for the Inner Line Permit (ILP) needed for Tsomgo Lake, Nathula, Lachung & Yumthang — issued in Gangtok or online via the Sikkim Tourism portal.',
+  himachal_pradesh: 'Mountain weather flips fast — pack warm layers + a windproof shell even in summer, and watch for landslide road closures during late-monsoon (Aug–Sep).',
+  kerala: 'Houseboat rates in Alleppey are highest Dec–Jan; book 2–3 weeks ahead for the best deck-cabin boats. Carry mosquito repellent for backwater nights.',
+  goa: 'North Goa = parties & flea markets, South Goa = quiet beaches. Most beach shacks shut down May–Sep monsoon. Pre-book taxis or rent a scooter — public transport is limited.',
+  rajasthan: 'Summers are brutal (Apr–Jun, 40 °C+) — visit between Oct and Mar. Carry strong sunscreen, hats, and electrolytes; haggle at markets but respect monument fees.',
+  tamil_nadu: 'Temples here have a strict dress code — covered shoulders & knees, leave footwear outside, and most inner sanctums prohibit phones/cameras.',
+  karnataka: 'Coorg & Chikmagalur roads are narrow and twisty; ride/drive only in daylight. Hampi: hire a local guide or use a bicycle/electric vehicle to cover the boulder-strewn ruins.',
+  maharashtra: 'Mumbai locals are cashless-friendly but carry small notes for taxis. Skip Mumbai → hill-station travel during peak monsoon weekends — traffic + landslides on the Western Ghats.',
+  west_bengal: 'Darjeeling toy train is iconic but books out — reserve the joy ride from Darjeeling–Ghoom 4–6 weeks ahead via IRCTC.',
+  bihar: 'Bodh Gaya & Nalanda are relaxed but go quiet by sunset. Carry your own water and modest clothing for the Mahabodhi Temple complex.',
+  gujarat: 'Gujarat is officially dry — alcohol requires a permit purchased in-state for tourists. The Rann of Kutch is best Nov–Feb during the Rann Utsav.',
+  assam: 'Kaziranga safaris must be pre-booked through forest department portal; jeep slots fill weeks in advance Nov–Feb. Carry warm clothes for misty morning rides.',
+  meghalaya: 'Living-root-bridge trails (Cherrapunji, Mawlynnong) involve 3,000+ stair steps — start before 9 am to beat heat & afternoon rain. Cash is preferred outside Shillong.',
+  manipur: 'Foreign nationals need RAP/PAP; Indian visitors only need ID. Loktak Lake homestays book out fast in winter — confirm bookings 2 weeks ahead.',
+  mizoram: 'Inner Line Permit required for non-Mizos — issued at Aizawl Airport on arrival or online. Sundays = most shops & restaurants closed (Christian state).',
+  jharkhand: 'Parasnath Hill (Shikharji) parikrama starts at 4 am — wear non-leather footwear, carry water; the 27-km loop takes most pilgrims 8–10 hrs.',
+  chhattisgarh: 'Chitrakote Falls are spectacular Aug–Oct (post-monsoon) but the road from Jagdalpur is rough — hire an SUV, not a sedan.',
+  haryana: 'Surajkund Mela (Feb) and Kurukshetra Gita Mahotsav (Dec) are the best times to visit — otherwise plan as a 1–2 day add-on around Delhi.',
+  andhra_pradesh: 'Visakhapatnam beaches are fine to walk but currents are strong — swim only in flag-marked zones with lifeguards.',
+  telangana: 'Hyderabad biryani is iconic but spicy — try the dum biryani at Paradise/Bawarchi/Shadab and ask for "less spicy" if needed. Charminar area gets choked after 6 pm.',
+};
+
+const PLACE_TIPS: Record<string, string> = {
+  ap_tirupati: 'Book Tirupati Darshan online via the TTD website (₹300 Special Entry Darshan) at least 2–3 weeks in advance — walk-in queues can be 8–12 hours.',
+  wb_sundarbans: 'Sundarbans requires a 2-night package tour that bundles the boat, forest permit, and accommodation — self-navigation is not allowed for safety reasons.',
+  sk_lachung: 'Lachung & Yumthang Valley need a separate Protected Area Permit (PAP); arrange via your Gangtok hotel/operator at least 1 day before.',
+  mh_ajanta: 'Ajanta Caves are closed on Mondays. Hire a torch + an ASI-licensed guide at the entry gate — the cave paintings are dim and unguided visits miss most of the iconography.',
+  mh_ellora: 'Ellora is closed on Tuesdays. Don\'t miss Cave 16 (Kailasa Temple) — start there before tour buses arrive (~10 am).',
+  ka_hampi: 'Hampi is best explored over 2 days — sacred centre + royal centre. Sunrise at Matanga Hill or Hemakuta Hill is unmissable.',
+  tn_madurai: 'Meenakshi Temple has 4 entry gates with different queues — the south gate is usually fastest. Phones/cameras must be deposited at the cloakroom.',
+  tn_thanjavur: 'Brihadeeswara Temple opens 6 am–12:30 pm, then 4–8:30 pm. Visit in early morning to photograph the 1,000-year-old vimana without crowds.',
+  kl_alleppey: 'Choose a single-bedroom houseboat (1BR) for couples, 2BR-deluxe for families. Cruises run 12 noon → 9 am — confirm AC operation hours.',
+  hp_spiti: 'Spiti Valley is a high-altitude desert (3,800m+) — acclimatise in Kalpa or Kaza for a day before pushing higher. Some passes (Kunzum La, Rohtang) close Oct–May.',
+  hp_bir_billing: 'Tandem paragliding flights run Oct–Jun; cancellations are common in cloudy weather. Confirm same-morning with your operator.',
+  gj_rann: 'The White Rann is at its full white-salt-desert glory only Nov–Feb (Rann Utsav). Outside this window, the marshes flood and access is restricted.',
+  gj_gir: 'Gir National Park lion safaris are limited to ~30 jeeps per slot — book online via gujaratforest.org 60 days ahead, especially weekends.',
+  as_kaziranga: 'Kaziranga elephant safaris (5:30 am) are limited — pre-book; jeep safaris are easier walk-in. Park closed mid-Apr to mid-Oct (monsoon).',
+  ka_belur_halebidu: 'Belur & Halebidu are 16 km apart — combine in one day. The Hoysala carvings reward a guide; one is available at the temple gate.',
+  cg_chitrakote: 'Chitrakote Falls coracle rides at the base operate only when water level is moderate — don\'t expect them at the monsoon peak (Aug).',
+};
+
+const CATEGORY_TIPS: Record<string, string> = {
+  hill_station: 'Pack thermals + a windproof jacket — even summer evenings drop below 10 °C in most Indian hill stations.',
+  beach: 'Carry reef-safe sunscreen, a rashguard, and avoid swimming in unpatrolled waters — currents are stronger than they look.',
+  religious: 'Most temples require modest dress (covered shoulders & knees) and shoes-off; phones/cameras are banned in many inner sanctums.',
+  wildlife: 'Wildlife safaris must be booked online via the state forest portal — same-day walk-ins rarely work in peak season.',
+  heritage: 'Most ASI monuments are closed one day a week (often Friday or Monday) — check before you arrive.',
+  nature: 'Network coverage drops fast outside towns — download offline maps and tell someone your day plan if trekking.',
+  cultural: 'Take a local food walk in the old quarter — it\'s the fastest way to absorb a city\'s culture without museum fatigue.',
+};
+
+const ORIGIN_LATITUDE_TIPS: Array<{ test: (lat: number) => boolean; tip: string }> = [
+  {
+    test: lat => lat < 16,
+    tip: 'Coming from south India? Pack actual cold-weather clothing if you\'re heading to the Himalayas — even "warm jacket" rentals at hill stations run 8–12 °C light.',
+  },
+  {
+    test: lat => lat > 26,
+    tip: 'Coming from the north? Pack lightweight cottons + good sandals for the south — humidity is higher than Delhi summers even in "cool" months.',
+  },
+];
+
+function buildTips(places: TouristPlace[], options: ItineraryOptions, totalDistanceKm: number): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (t: string) => { if (!seen.has(t)) { seen.add(t); out.push(t); } };
+
   const states = [...new Set(places.map(p => p.state))];
+  const categories = [...new Set(places.map(p => p.category))];
+  const placeIds = new Set(places.map(p => p.id));
 
-  if (states.includes('sikkim')) {
-    tips.push('Obtain Inner Line Permit (ILP) for restricted areas in Sikkim in advance from Gangtok or online.');
+  // 1. Place-specific (highest priority, most actionable)
+  for (const id of placeIds) {
+    const t = PLACE_TIPS[id];
+    if (t) push(t);
   }
-  if (states.includes('andhra_pradesh') && places.some(p => p.id === 'ap_tirupati')) {
-    tips.push('Book Tirupati Darshan tickets (Special Entry Darshan) at least 2–3 weeks in advance on the TTD website.');
-  }
-  if (states.includes('west_bengal') && places.some(p => p.id === 'wb_sundarbans')) {
-    tips.push('Book a 2-night Sundarbans package tour that includes boat, permit, and accommodation — self-navigation is not allowed.');
-  }
-  if (places.length > 3) {
-    tips.push('Book inter-city trains at least 3 weeks in advance, especially Rajdhani and Shatabdi routes.');
-  }
-  tips.push('Carry lightweight warm layers if visiting hill stations (Sikkim/Darjeeling) even in summer.');
-  tips.push('Travel insurance with medical coverage is strongly recommended for Himalayan travel.');
 
-  return tips;
+  // 2. State-specific
+  for (const s of states) {
+    const t = STATE_TIPS[s];
+    if (t) push(t);
+  }
+
+  // 3. Trip-shape
+  if (places.length >= 3 && totalDistanceKm > 1500) {
+    push('You\'re covering 1,500+ km — book inter-city trains 3+ weeks ahead (Rajdhani/Shatabdi/Vande Bharat fill out fastest) and consider one flight leg to save 8–10 hours.');
+  }
+  if (options.numDays >= 7) {
+    push('Trips longer than a week: pack a packable laundry kit + book 1 rest day in the middle — back-to-back travel days lead to fatigue and cancelled plans.');
+  }
+  if (options.groupSize >= 6) {
+    push('Group of 6+: book a private tempo-traveller for inter-city legs (₹15–20/km) instead of multiple cabs — cheaper, single-vehicle, and smoother for luggage.');
+  }
+  if (options.groupSize === 1) {
+    push('Solo? Hostels in India are excellent and social — Zostel & The Hosteller have outposts in most tourist towns at ₹500–900 a night.');
+  }
+
+  // 4. Category-specific
+  for (const c of categories) {
+    const t = CATEGORY_TIPS[c];
+    if (t) push(t);
+  }
+
+  // 5. Origin-aware
+  const origin = getOriginById(options.originCityId);
+  if (origin) {
+    for (const r of ORIGIN_LATITUDE_TIPS) {
+      if (r.test(origin.coordinates.lat)) { push(r.tip); break; }
+    }
+  }
+
+  // 6. Always-relevant fallback (only if we somehow have <3 tips)
+  if (out.length < 3) {
+    push('Carry a power bank, a copy of your government photo ID (digital + printed), and ₹2–3,000 in cash — UPI works almost everywhere but rural fuel pumps & temples often need cash.');
+  }
+
+  // Cap to 6 tips so the list stays scannable
+  return out.slice(0, 6);
 }
 
 export function generateItinerary(places: TouristPlace[], options: ItineraryOptions): Itinerary {
@@ -315,10 +418,11 @@ export function generateItinerary(places: TouristPlace[], options: ItineraryOpti
 
   const costs = computeCosts(days, journey, options);
   const route = routePlaces.map(p => p.name);
-  const tips = buildTips(places);
 
   const totalDistanceKm = journey.reduce((s, l) => s + l.distanceKm, 0);
   const totalTravelHours = +(journey.reduce((s, l) => s + l.durationHours, 0).toFixed(1));
+
+  const tips = buildTips(places, options, totalDistanceKm);
 
   return { days, totalEstimatedCost: costs, route, tips, journey, totalDistanceKm, totalTravelHours };
 }
