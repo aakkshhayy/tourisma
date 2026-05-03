@@ -15,6 +15,9 @@ export const ORIGIN_CITIES: OriginCity[] = [
   { id: 'chandigarh', name: 'Chandigarh', state: 'Chandigarh', coordinates: { lat: 30.733, lng: 76.779 }, emoji: '🌹', hasAirport: true },
   { id: 'guwahati', name: 'Guwahati', state: 'Assam', coordinates: { lat: 26.144, lng: 91.736 }, emoji: '🐘', hasAirport: true },
   { id: 'bhubaneswar', name: 'Bhubaneswar', state: 'Odisha', coordinates: { lat: 20.296, lng: 85.824 }, emoji: '🛕', hasAirport: true },
+  { id: 'patna', name: 'Patna', state: 'Bihar', coordinates: { lat: 25.594, lng: 85.137 }, emoji: '🛕', hasAirport: true },
+  { id: 'bhopal', name: 'Bhopal', state: 'Madhya Pradesh', coordinates: { lat: 23.260, lng: 77.413 }, emoji: '🏞️', hasAirport: true },
+  { id: 'indore', name: 'Indore', state: 'Madhya Pradesh', coordinates: { lat: 22.720, lng: 75.857 }, emoji: '🍽️', hasAirport: true },
 ];
 
 export const getOriginById = (id: string): OriginCity | undefined =>

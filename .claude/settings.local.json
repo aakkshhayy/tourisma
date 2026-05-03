@@ -13,7 +13,19 @@
       "Bash(git --version)",
       "Bash(git config *)",
       "Bash(ssh -T git@github.com)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(node -e \"const {STATES, PLACES} = require\\('./src/data/places.ts'.replace\\('.ts',''\\)\\); \")",
+      "Bash(grep -E \"^  \\\\{ id: '[a-z_]+', name:\" src/data/places.ts)",
+      "Bash(grep -nE \"^  \\\\{$|name: '|state: '\" src/data/places.ts)",
+      "mcp__7252a808-f622-4ff5-a023-db0523af7021__deploy_to_vercel",
+      "Bash(npm ls *)",
+      "Bash(env)"
     ]
   }
 }

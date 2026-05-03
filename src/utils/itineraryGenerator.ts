@@ -23,12 +23,48 @@ const STATE_ORDER: Record<string, number> = {
   kerala: 19,
 };
 
-function clusterPlaces(places: TouristPlace[]): TouristPlace[][] {
+function clusterPlaces(
+  places: TouristPlace[],
+  origin?: { coordinates: { lat: number; lng: number } },
+): TouristPlace[][] {
   const byState: Record<string, TouristPlace[]> = {};
   for (const p of places) {
     if (!byState[p.state]) byState[p.state] = [];
     byState[p.state].push(p);
   }
+
+  // Origin-aware ordering: sort clusters by their nearest place to origin.
+  // Within a cluster, use greedy nearest-neighbour from the closest entry point.
+  if (origin) {
+    const stateIds = Object.keys(byState);
+    const minDistByState: Record<string, number> = {};
+    for (const sid of stateIds) {
+      minDistByState[sid] = Math.min(
+        ...byState[sid].map(p => haversineKm(p.coordinates, origin.coordinates)),
+      );
+    }
+    stateIds.sort((a, b) => minDistByState[a] - minDistByState[b]);
+
+    let prevCoords = origin.coordinates;
+    return stateIds.map(sid => {
+      const cluster = [...byState[sid]];
+      const ordered: TouristPlace[] = [];
+      while (cluster.length) {
+        let bestIdx = 0;
+        let bestDist = haversineKm(cluster[0].coordinates, prevCoords);
+        for (let i = 1; i < cluster.length; i++) {
+          const d = haversineKm(cluster[i].coordinates, prevCoords);
+          if (d < bestDist) { bestDist = d; bestIdx = i; }
+        }
+        const [picked] = cluster.splice(bestIdx, 1);
+        ordered.push(picked);
+        prevCoords = picked.coordinates;
+      }
+      return ordered;
+    });
+  }
+
+  // Fallback: static geographic state order (no origin)
   const sortedStates = Object.keys(byState).sort(
     (a, b) => (STATE_ORDER[a] ?? 99) - (STATE_ORDER[b] ?? 99)
   );
@@ -242,7 +278,8 @@ function buildTips(places: TouristPlace[]): string[] {
 }
 
 export function generateItinerary(places: TouristPlace[], options: ItineraryOptions): Itinerary {
-  const clusters = clusterPlaces(places);
+  const origin = getOriginById(options.originCityId);
+  const clusters = clusterPlaces(places, origin);
   const days = distributeIntodays(clusters, options.numDays);
   const routePlaces: TouristPlace[] = [];
   const seen = new Set<string>();
@@ -255,7 +292,6 @@ export function generateItinerary(places: TouristPlace[], options: ItineraryOpti
     }
   }
 
-  const origin = getOriginById(options.originCityId);
   const journey = buildJourney(origin, routePlaces, options.travelMode);
 
   // Annotate each day with the cost of travelling INTO that place
