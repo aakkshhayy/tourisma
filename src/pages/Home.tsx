@@ -4,9 +4,9 @@ import { STATES, PLACES, getPlaceById } from '../data/places';
 import { ORIGIN_CITIES } from '../data/origins';
 import { useItineraryStore } from '../store/itineraryStore';
 import {
-  ArrowRight, Map, MapPin, Sparkles, Wallet, Compass, Star,
-  Home as HomeIcon, Calendar, Wand2, Train, Hotel, Utensils,
-  ChevronDown, Check,
+  ArrowRight, MapPin, Sparkles, Wallet, Compass, Star,
+  Home as HomeIcon, Wand2, Train, Hotel, Utensils,
+  ChevronDown, Check, Plane, ChevronRight,
 } from 'lucide-react';
 
 const GRADIENT_CLASSES: Record<string, string> = {
@@ -38,98 +38,118 @@ const HOW_IT_WORKS = [
   { step: '04', icon: Wallet, title: 'See Costs', desc: 'Realistic breakdown — travel, stay, food, entry — all transparent.' },
 ];
 
-const SAMPLE = {
-  originId: 'patna',
-  originName: 'Patna',
-  originEmoji: '🛕',
-  destName: 'Sikkim',
-  destEmoji: '🏔️',
-  cost: 12000,
-  days: 5,
-  placeIds: ['sk_gangtok', 'sk_lachung'],
-};
+// Quick-pick example trips — appear as chips below the search form
+const QUICK_TRIPS = [
+  { fromId: 'patna',  fromEmoji: '🛕', toState: 'sikkim',     toEmoji: '🏔️', days: 5 },
+  { fromId: 'mumbai', fromEmoji: '🌆', toState: 'kerala',     toEmoji: '🌴', days: 7 },
+  { fromId: 'delhi',  fromEmoji: '🏛️', toState: 'goa',        toEmoji: '🏖️', days: 5 },
+  { fromId: 'kolkata',fromEmoji: '🎨', toState: 'tamil_nadu', toEmoji: '🛕', days: 6 },
+];
+
+// Pick the top 2-3 most "marquee" places of a state (highest recommendedDays)
+function topPlacesOfState(stateId: string, n: number = 2): string[] {
+  return PLACES
+    .filter(p => p.state === stateId)
+    .sort((a, b) => b.recommendedDays - a.recommendedDays)
+    .slice(0, n)
+    .map(p => p.id);
+}
 
 export default function Home() {
   const navigate = useNavigate();
   const { setOptions, addPlace, clearSelection, options } = useItineraryStore();
   const [originId, setOriginId] = useState(options.originCityId || 'delhi');
+  const [destStateId, setDestStateId] = useState<string>('sikkim');
   const [days, setDays] = useState(options.numDays || 5);
   const [originOpen, setOriginOpen] = useState(false);
+  const [destOpen, setDestOpen] = useState(false);
 
   const selectedOrigin = ORIGIN_CITIES.find(o => o.id === originId);
+  const selectedDest = STATES.find(s => s.id === destStateId);
 
-  const goPlan = () => {
-    setOptions({ originCityId: originId, numDays: days });
-    navigate('/explore');
-  };
-
-  const loadSample = () => {
+  // Generate handler — pre-fill 2 marquee places of destination state, navigate with auto-trigger
+  const generate = (oId = originId, dId = destStateId, d = days) => {
     clearSelection();
-    setOptions({ originCityId: SAMPLE.originId, numDays: SAMPLE.days });
-    SAMPLE.placeIds.forEach(id => {
-      const p = getPlaceById(id);
+    setOptions({ originCityId: oId, numDays: d });
+    topPlacesOfState(dId, 2).forEach(pid => {
+      const p = getPlaceById(pid);
       if (p) addPlace(p);
     });
     navigate('/itinerary#auto');
   };
 
+  const loadQuick = (q: typeof QUICK_TRIPS[number]) => {
+    setOriginId(q.fromId);
+    setDestStateId(q.toState);
+    setDays(q.days);
+    generate(q.fromId, q.toState, q.days);
+  };
+
   return (
     <div className="min-h-screen">
-      {/* HERO — Plan from my city */}
-      <section className="relative overflow-hidden bg-sand pt-10 sm:pt-14 pb-20">
-        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-saffron/15 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-amber-300/20 rounded-full blur-3xl" />
+      {/* HERO — full-screen, dominant */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-sand via-orange-50/40 to-amber-50 min-h-[calc(100vh-4rem)] flex items-center py-12 sm:py-20">
+        {/* Decorative blurs */}
+        <div className="absolute -top-32 -right-20 w-[600px] h-[600px] bg-saffron/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 -left-20 w-[600px] h-[600px] bg-amber-300/25 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-rose-200/15 rounded-full blur-3xl pointer-events-none" />
+        {/* Subtle dot grid */}
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, #1A1815 1px, transparent 0)',
+          backgroundSize: '32px 32px',
+        }} />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-white border border-ink-100 px-3 py-1.5 rounded-full text-xs font-semibold text-ink-600 mb-5 shadow-soft">
+        <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-white border border-ink-100 px-4 py-2 rounded-full text-xs font-semibold text-ink-600 mb-6 sm:mb-8 shadow-soft">
               <Sparkles className="w-3.5 h-3.5 text-saffron" strokeWidth={2.5} />
               <span>Smart itineraries · {STATES.length} states · {PLACES.length}+ places</span>
             </div>
 
-            <h1 className="font-display font-extrabold text-ink-900 text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight max-w-4xl mx-auto">
-              Plan your trip from your city
+            <h1 className="font-display font-extrabold text-ink-900 text-5xl sm:text-6xl lg:text-8xl leading-[0.95] tracking-tight">
+              Plan your trip
+              <br />
+              from your city
               <br />
               <span className="bg-gradient-to-r from-saffron via-orange-500 to-amber-500 bg-clip-text text-transparent">
                 in seconds.
               </span>
             </h1>
 
-            <p className="mt-5 text-ink-600 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Pick your home city, choose destinations, and we build the route, day-by-day plan, and a real cost estimate.
+            <p className="mt-6 sm:mt-8 text-ink-600 text-lg sm:text-xl lg:text-2xl max-w-2xl mx-auto leading-relaxed">
+              From → To. Get a smart route, day-by-day plan, and a real cost estimate.
             </p>
           </div>
 
-          {/* Plan card */}
-          <div className="max-w-3xl mx-auto bg-white rounded-3xl border border-ink-100 shadow-card p-3 sm:p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_auto] gap-2 sm:gap-3 items-stretch">
-              {/* From city */}
+          {/* SEARCH BAR — the hero feature */}
+          <div className="mt-10 sm:mt-12 max-w-5xl mx-auto bg-white rounded-3xl border border-ink-100 shadow-card p-2 sm:p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_1.2fr_0.8fr_auto] gap-2 items-stretch">
+              {/* FROM */}
               <div className="relative">
                 <button
-                  onClick={() => setOriginOpen(o => !o)}
-                  className="w-full flex items-center gap-3 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-4 py-3.5 text-left transition-colors"
+                  onClick={() => { setOriginOpen(o => !o); setDestOpen(false); }}
+                  className="w-full h-full flex items-center gap-3 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-4 sm:px-5 py-4 sm:py-5 text-left transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-saffron/15 flex items-center justify-center flex-shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-saffron/15 flex items-center justify-center flex-shrink-0">
                     <HomeIcon className="w-5 h-5 text-saffron" strokeWidth={2.5} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-ink-400">From</div>
-                    <div className="font-extrabold text-ink-900 text-base leading-tight truncate">
-                      {selectedOrigin?.emoji} {selectedOrigin?.name ?? 'Select'}
+                    <div className="font-extrabold text-ink-900 text-lg leading-tight truncate">
+                      {selectedOrigin?.emoji} {selectedOrigin?.name ?? 'Select city'}
                     </div>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-ink-400 flex-shrink-0 transition-transform ${originOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
                 </button>
-
                 {originOpen && (
-                  <div className="absolute z-20 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-72 overflow-y-auto">
+                  <div className="absolute z-30 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-80 overflow-y-auto">
                     {ORIGIN_CITIES.map(o => {
                       const sel = originId === o.id;
                       return (
                         <button
                           key={o.id}
                           onClick={() => { setOriginId(o.id); setOriginOpen(false); }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-colors text-left
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-left
                             ${sel ? 'bg-saffron/10 text-saffron' : 'text-ink-900 hover:bg-ink-50'}`}
                         >
                           <span>{o.emoji}</span>
@@ -142,59 +162,117 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Days */}
-              <div className="bg-ink-50/60 rounded-2xl px-4 py-3.5">
+              {/* TO */}
+              <div className="relative">
+                <button
+                  onClick={() => { setDestOpen(o => !o); setOriginOpen(false); }}
+                  className="w-full h-full flex items-center gap-3 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-4 sm:px-5 py-4 sm:py-5 text-left transition-colors"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 text-emerald-700" strokeWidth={2.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-ink-400">To</div>
+                    <div className="font-extrabold text-ink-900 text-lg leading-tight truncate">
+                      {selectedDest?.emoji} {selectedDest?.name ?? 'Anywhere'}
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-ink-400 flex-shrink-0 transition-transform ${destOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
+                </button>
+                {destOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-80 overflow-y-auto">
+                    {STATES.map(s => {
+                      const sel = destStateId === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => { setDestStateId(s.id); setDestOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-left
+                            ${sel ? 'bg-saffron/10 text-saffron' : 'text-ink-900 hover:bg-ink-50'}`}
+                        >
+                          <span>{s.emoji}</span>
+                          <span className="flex-1">{s.name}</span>
+                          {sel && <Check className="w-4 h-4" strokeWidth={3} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* DAYS */}
+              <div className="bg-ink-50/60 rounded-2xl px-4 sm:px-5 py-4 sm:py-5">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-ink-400">Days</div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <button onClick={() => setDays(d => Math.max(1, d - 1))} className="w-8 h-8 -m-1.5 rounded-lg hover:bg-white text-ink-600 font-bold text-lg">−</button>
-                  <span className="font-extrabold text-ink-900 text-xl">{days}</span>
-                  <button onClick={() => setDays(d => Math.min(30, d + 1))} className="w-8 h-8 -m-1.5 rounded-lg hover:bg-white text-ink-600 font-bold text-lg">+</button>
+                <div className="flex items-center justify-between mt-1">
+                  <button onClick={() => setDays(d => Math.max(1, d - 1))} className="w-9 h-9 -m-1.5 rounded-lg hover:bg-white text-ink-600 font-bold text-xl transition-colors">−</button>
+                  <span className="font-extrabold text-ink-900 text-2xl tabular-nums">{days}</span>
+                  <button onClick={() => setDays(d => Math.min(30, d + 1))} className="w-9 h-9 -m-1.5 rounded-lg hover:bg-white text-ink-600 font-bold text-xl transition-colors">+</button>
                 </div>
               </div>
 
               {/* CTA */}
               <button
-                onClick={goPlan}
-                className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-saffron to-orange-500 text-white font-extrabold px-6 py-4 rounded-2xl hover:shadow-glow active:scale-[0.99] transition-all whitespace-nowrap"
+                onClick={() => generate()}
+                className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-saffron to-orange-500 text-white font-extrabold px-6 sm:px-8 py-5 rounded-2xl hover:shadow-glow active:scale-[0.99] transition-all whitespace-nowrap text-base sm:text-lg"
               >
-                <Wand2 className="w-4 h-4" strokeWidth={2.5} />
+                <Wand2 className="w-5 h-5" strokeWidth={2.5} />
                 Generate Trip Plan
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
               </button>
             </div>
-
-            {/* Sample example pill */}
-            <button
-              onClick={loadSample}
-              className="mt-3 w-full flex items-center justify-between gap-3 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-2xl px-4 py-3 transition-colors group"
-            >
-              <div className="flex items-center gap-3 text-left flex-1 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-amber-200/60 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-amber-800" strokeWidth={2.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-amber-800">Try this example</div>
-                  <div className="font-bold text-ink-900 text-sm truncate">
-                    {SAMPLE.originEmoji} {SAMPLE.originName} → {SAMPLE.destEmoji} {SAMPLE.destName} · {SAMPLE.days} days · ≈ ₹{SAMPLE.cost.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-amber-800 group-hover:translate-x-1 transition-transform flex-shrink-0" strokeWidth={2.5} />
-            </button>
           </div>
 
-          {/* Quick stats */}
-          <div className="mt-8 grid grid-cols-3 gap-3 max-w-md mx-auto">
+          {/* Quick-pick chips */}
+          <div className="mt-6 sm:mt-8 max-w-5xl mx-auto">
+            <div className="flex items-center gap-2 mb-3 justify-center sm:justify-start">
+              <Sparkles className="w-3.5 h-3.5 text-saffron" strokeWidth={2.5} />
+              <span className="text-[11px] font-bold uppercase tracking-widest text-ink-400">Try a quick example</span>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+              {QUICK_TRIPS.map(q => {
+                const fromCity = ORIGIN_CITIES.find(o => o.id === q.fromId);
+                const toState = STATES.find(s => s.id === q.toState);
+                return (
+                  <button
+                    key={`${q.fromId}-${q.toState}`}
+                    onClick={() => loadQuick(q)}
+                    className="group inline-flex items-center gap-2 bg-white hover:bg-saffron/5 border border-ink-100 hover:border-saffron/40 px-4 py-2.5 rounded-2xl transition-all"
+                  >
+                    <span className="text-sm font-bold text-ink-900">
+                      {q.fromEmoji} {fromCity?.name}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-saffron flex-shrink-0" strokeWidth={2.5} />
+                    <span className="text-sm font-bold text-ink-900">
+                      {q.toEmoji} {toState?.name}
+                    </span>
+                    <span className="text-xs font-semibold text-ink-400 ml-1">· {q.days}d</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Hero stats — small footer row */}
+          <div className="mt-10 sm:mt-14 flex items-center justify-center gap-6 sm:gap-10 text-center flex-wrap">
             {[
-              { value: STATES.length, label: 'States' },
-              { value: `${PLACES.length}+`, label: 'Destinations' },
-              { value: '7', label: 'Categories' },
-            ].map(s => (
-              <div key={s.label} className="bg-white rounded-2xl px-4 py-3 border border-ink-100 text-center">
-                <div className="text-2xl font-extrabold text-ink-900">{s.value}</div>
-                <div className="text-xs text-ink-400 font-semibold uppercase tracking-wider">{s.label}</div>
-              </div>
-            ))}
+              { value: STATES.length, label: 'States', icon: Compass },
+              { value: `${PLACES.length}+`, label: 'Destinations', icon: MapPin },
+              { value: '17', label: 'Origin cities', icon: HomeIcon },
+              { value: '100%', label: 'Free', icon: Star },
+            ].map(s => {
+              const Icon = s.icon;
+              return (
+                <div key={s.label} className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-ink-100 flex items-center justify-center">
+                    <Icon className="w-4 h-4 text-saffron" strokeWidth={2.5} />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-lg font-extrabold text-ink-900 leading-none">{s.value}</div>
+                    <div className="text-[10px] text-ink-400 font-semibold uppercase tracking-wider">{s.label}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -205,7 +283,7 @@ export default function Home() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { icon: Compass, title: 'Route mapped', desc: 'City → places → return, with distance & time per leg' },
-              { icon: Train, title: 'Smart transport', desc: 'Auto-picks train, bus or flight per leg distance' },
+              { icon: Plane, title: 'Smart transport', desc: 'Auto-picks train, bus or flight per leg distance' },
               { icon: Hotel, title: 'Stay & food costs', desc: 'Budget, mid-range, or luxury — all priced realistically' },
               { icon: Utensils, title: 'Day-by-day', desc: 'Each day has activities, travel notes, and entry tips' },
             ].map(f => {
