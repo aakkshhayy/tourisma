@@ -25,7 +25,10 @@
       "Bash(grep -nE \"^  \\\\{$|name: '|state: '\" src/data/places.ts)",
       "mcp__7252a808-f622-4ff5-a023-db0523af7021__deploy_to_vercel",
       "Bash(npm ls *)",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(npm run *)",
+      "Bash(awk -F: '{print $3}')",
+      "Bash(awk '/^const STATE_TIPS/,/^};/' src/utils/itineraryGenerator.ts)"
     ]
   }
 }

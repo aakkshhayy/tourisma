@@ -279,7 +279,6 @@ const STATE_TIPS: Record<string, string> = {
   himachal_pradesh: 'Mountain weather flips fast — pack warm layers + a windproof shell even in summer, and watch for landslide road closures during late-monsoon (Aug–Sep).',
   kerala: 'Houseboat rates in Alleppey are highest Dec–Jan; book 2–3 weeks ahead for the best deck-cabin boats. Carry mosquito repellent for backwater nights.',
   goa: 'North Goa = parties & flea markets, South Goa = quiet beaches. Most beach shacks shut down May–Sep monsoon. Pre-book taxis or rent a scooter — public transport is limited.',
-  rajasthan: 'Summers are brutal (Apr–Jun, 40 °C+) — visit between Oct and Mar. Carry strong sunscreen, hats, and electrolytes; haggle at markets but respect monument fees.',
   tamil_nadu: 'Temples here have a strict dress code — covered shoulders & knees, leave footwear outside, and most inner sanctums prohibit phones/cameras.',
   karnataka: 'Coorg & Chikmagalur roads are narrow and twisty; ride/drive only in daylight. Hampi: hire a local guide or use a bicycle/electric vehicle to cover the boulder-strewn ruins.',
   maharashtra: 'Mumbai locals are cashless-friendly but carry small notes for taxis. Skip Mumbai → hill-station travel during peak monsoon weekends — traffic + landslides on the Western Ghats.',
