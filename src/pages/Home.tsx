@@ -99,136 +99,124 @@ export default function Home() {
           backgroundSize: '32px 32px',
         }} />
 
-        <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-white border border-ink-100 px-4 py-2 rounded-full text-xs font-semibold text-ink-600 mb-6 sm:mb-8 shadow-soft">
-              <Sparkles className="w-3.5 h-3.5 text-saffron" strokeWidth={2.5} />
-              <span>Smart itineraries · {STATES.length} states · {PLACES.length}+ places</span>
-            </div>
+        <div className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Headline — single focal point */}
+          <h1 className="font-display font-extrabold text-ink-900 text-5xl sm:text-7xl lg:text-[7.5rem] leading-[0.92] tracking-tight">
+            Plan your trip
+            <br />
+            from <span className="bg-gradient-to-r from-saffron via-orange-500 to-amber-500 bg-clip-text text-transparent">your city.</span>
+          </h1>
 
-            <h1 className="font-display font-extrabold text-ink-900 text-5xl sm:text-6xl lg:text-8xl leading-[0.95] tracking-tight">
-              Plan your trip
-              <br />
-              from your city
-              <br />
-              <span className="bg-gradient-to-r from-saffron via-orange-500 to-amber-500 bg-clip-text text-transparent">
-                in seconds.
-              </span>
-            </h1>
-
-            <p className="mt-6 sm:mt-8 text-ink-600 text-lg sm:text-xl lg:text-2xl max-w-2xl mx-auto leading-relaxed">
-              From → To. Get a smart route, day-by-day plan, and a real cost estimate.
-            </p>
-          </div>
-
-          {/* SEARCH BAR — the hero feature */}
-          <div className="mt-10 sm:mt-12 max-w-5xl mx-auto bg-white rounded-3xl border border-ink-100 shadow-card p-2 sm:p-3">
-            <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_1.2fr_0.8fr_auto] gap-2 items-stretch">
-              {/* FROM */}
-              <div className="relative">
-                <button
-                  onClick={() => { setOriginOpen(o => !o); setDestOpen(false); }}
-                  className="w-full h-full flex items-center gap-3 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-4 sm:px-5 py-4 sm:py-5 text-left transition-colors"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-saffron/15 flex items-center justify-center flex-shrink-0">
-                    <HomeIcon className="w-5 h-5 text-saffron" strokeWidth={2.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-ink-400">From</div>
-                    <div className="font-extrabold text-ink-900 text-lg leading-tight truncate">
-                      {selectedOrigin?.emoji} {selectedOrigin?.name ?? 'Select city'}
+          {/* SEARCH FORM — large, centered, single action */}
+          <div className="mt-12 sm:mt-16 max-w-4xl mx-auto">
+            <div className="bg-white rounded-3xl border border-ink-100 shadow-card p-4 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-stretch">
+                {/* FROM */}
+                <div className="relative">
+                  <button
+                    onClick={() => { setOriginOpen(o => !o); setDestOpen(false); }}
+                    className="w-full h-full flex items-center gap-4 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-5 py-5 sm:py-6 text-left transition-colors"
+                  >
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-saffron/15 flex items-center justify-center flex-shrink-0">
+                      <HomeIcon className="w-6 h-6 text-saffron" strokeWidth={2.5} />
                     </div>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-ink-400 flex-shrink-0 transition-transform ${originOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
-                </button>
-                {originOpen && (
-                  <div className="absolute z-30 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-80 overflow-y-auto">
-                    {ORIGIN_CITIES.map(o => {
-                      const sel = originId === o.id;
-                      return (
-                        <button
-                          key={o.id}
-                          onClick={() => { setOriginId(o.id); setOriginOpen(false); }}
-                          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-left
-                            ${sel ? 'bg-saffron/10 text-saffron' : 'text-ink-900 hover:bg-ink-50'}`}
-                        >
-                          <span>{o.emoji}</span>
-                          <span className="flex-1">{o.name}</span>
-                          {sel && <Check className="w-4 h-4" strokeWidth={3} />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* TO */}
-              <div className="relative">
-                <button
-                  onClick={() => { setDestOpen(o => !o); setOriginOpen(false); }}
-                  className="w-full h-full flex items-center gap-3 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-4 sm:px-5 py-4 sm:py-5 text-left transition-colors"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-emerald-700" strokeWidth={2.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-ink-400">To</div>
-                    <div className="font-extrabold text-ink-900 text-lg leading-tight truncate">
-                      {selectedDest?.emoji} {selectedDest?.name ?? 'Anywhere'}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">From</div>
+                      <div className="font-extrabold text-ink-900 text-xl sm:text-2xl leading-tight truncate">
+                        {selectedOrigin?.emoji} {selectedOrigin?.name ?? 'Select city'}
+                      </div>
                     </div>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-ink-400 flex-shrink-0 transition-transform ${destOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
-                </button>
-                {destOpen && (
-                  <div className="absolute z-30 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-80 overflow-y-auto">
-                    {STATES.map(s => {
-                      const sel = destStateId === s.id;
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={() => { setDestStateId(s.id); setDestOpen(false); }}
-                          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-left
-                            ${sel ? 'bg-saffron/10 text-saffron' : 'text-ink-900 hover:bg-ink-50'}`}
-                        >
-                          <span>{s.emoji}</span>
-                          <span className="flex-1">{s.name}</span>
-                          {sel && <Check className="w-4 h-4" strokeWidth={3} />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                    <ChevronDown className={`w-5 h-5 text-ink-400 flex-shrink-0 transition-transform ${originOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
+                  </button>
+                  {originOpen && (
+                    <div className="absolute z-30 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-80 overflow-y-auto text-left">
+                      {ORIGIN_CITIES.map(o => {
+                        const sel = originId === o.id;
+                        return (
+                          <button
+                            key={o.id}
+                            onClick={() => { setOriginId(o.id); setOriginOpen(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-left
+                              ${sel ? 'bg-saffron/10 text-saffron' : 'text-ink-900 hover:bg-ink-50'}`}
+                          >
+                            <span>{o.emoji}</span>
+                            <span className="flex-1">{o.name}</span>
+                            {sel && <Check className="w-4 h-4" strokeWidth={3} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              {/* DAYS */}
-              <div className="bg-ink-50/60 rounded-2xl px-4 sm:px-5 py-4 sm:py-5">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-ink-400">Days</div>
-                <div className="flex items-center justify-between mt-1">
-                  <button onClick={() => setDays(d => Math.max(1, d - 1))} className="w-9 h-9 -m-1.5 rounded-lg hover:bg-white text-ink-600 font-bold text-xl transition-colors">−</button>
-                  <span className="font-extrabold text-ink-900 text-2xl tabular-nums">{days}</span>
-                  <button onClick={() => setDays(d => Math.min(30, d + 1))} className="w-9 h-9 -m-1.5 rounded-lg hover:bg-white text-ink-600 font-bold text-xl transition-colors">+</button>
+                {/* arrow connector */}
+                <div className="hidden sm:flex items-center justify-center text-ink-200">
+                  <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
+                </div>
+
+                {/* TO */}
+                <div className="relative">
+                  <button
+                    onClick={() => { setDestOpen(o => !o); setOriginOpen(false); }}
+                    className="w-full h-full flex items-center gap-4 bg-ink-50/60 hover:bg-ink-50 rounded-2xl px-5 py-5 sm:py-6 text-left transition-colors"
+                  >
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-6 h-6 text-emerald-700" strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">To</div>
+                      <div className="font-extrabold text-ink-900 text-xl sm:text-2xl leading-tight truncate">
+                        {selectedDest?.emoji} {selectedDest?.name ?? 'Anywhere'}
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-ink-400 flex-shrink-0 transition-transform ${destOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
+                  </button>
+                  {destOpen && (
+                    <div className="absolute z-30 left-0 right-0 mt-2 bg-white rounded-2xl border border-ink-100 shadow-card p-2 max-h-80 overflow-y-auto text-left">
+                      {STATES.map(s => {
+                        const sel = destStateId === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => { setDestStateId(s.id); setDestOpen(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-left
+                              ${sel ? 'bg-saffron/10 text-saffron' : 'text-ink-900 hover:bg-ink-50'}`}
+                          >
+                            <span>{s.emoji}</span>
+                            <span className="flex-1">{s.name}</span>
+                            {sel && <Check className="w-4 h-4" strokeWidth={3} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* DAYS — small inline */}
+                <div className="bg-ink-50/60 rounded-2xl px-3 sm:px-4 py-3 sm:py-0 sm:flex sm:items-center sm:gap-3">
+                  <div className="hidden sm:block text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">Days</div>
+                  <div className="flex items-center justify-between sm:gap-2">
+                    <button onClick={() => setDays(d => Math.max(1, d - 1))} className="w-9 h-9 rounded-xl hover:bg-white text-ink-600 font-bold text-xl transition-colors">−</button>
+                    <span className="font-extrabold text-ink-900 text-2xl tabular-nums w-7 text-center">{days}</span>
+                    <button onClick={() => setDays(d => Math.min(30, d + 1))} className="w-9 h-9 rounded-xl hover:bg-white text-ink-600 font-bold text-xl transition-colors">+</button>
+                  </div>
                 </div>
               </div>
 
-              {/* CTA */}
+              {/* CTA — full-width below the inputs */}
               <button
                 onClick={() => generate()}
-                className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-saffron to-orange-500 text-white font-extrabold px-6 sm:px-8 py-5 rounded-2xl hover:shadow-glow active:scale-[0.99] transition-all whitespace-nowrap text-base sm:text-lg"
+                className="group mt-3 w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-saffron via-orange-500 to-amber-500 text-white font-extrabold px-8 py-5 sm:py-6 rounded-2xl hover:shadow-glow active:scale-[0.99] transition-all text-lg sm:text-xl"
               >
                 <Wand2 className="w-5 h-5" strokeWidth={2.5} />
                 Generate Trip Plan
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
               </button>
             </div>
-          </div>
 
-          {/* Quick-pick chips */}
-          <div className="mt-6 sm:mt-8 max-w-5xl mx-auto">
-            <div className="flex items-center gap-2 mb-3 justify-center sm:justify-start">
-              <Sparkles className="w-3.5 h-3.5 text-saffron" strokeWidth={2.5} />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-ink-400">Try a quick example</span>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+            {/* Quick examples — subtle, single line */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-xs font-semibold text-ink-400 uppercase tracking-widest">Try:</span>
               {QUICK_TRIPS.map(q => {
                 const fromCity = ORIGIN_CITIES.find(o => o.id === q.fromId);
                 const toState = STATES.find(s => s.id === q.toState);
@@ -236,43 +224,15 @@ export default function Home() {
                   <button
                     key={`${q.fromId}-${q.toState}`}
                     onClick={() => loadQuick(q)}
-                    className="group inline-flex items-center gap-2 bg-white hover:bg-saffron/5 border border-ink-100 hover:border-saffron/40 px-4 py-2.5 rounded-2xl transition-all"
+                    className="group inline-flex items-center gap-1.5 bg-white/70 hover:bg-white border border-ink-100 hover:border-saffron/40 px-3 py-1.5 rounded-full transition-all text-sm font-bold text-ink-700"
                   >
-                    <span className="text-sm font-bold text-ink-900">
-                      {q.fromEmoji} {fromCity?.name}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-saffron flex-shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-bold text-ink-900">
-                      {q.toEmoji} {toState?.name}
-                    </span>
-                    <span className="text-xs font-semibold text-ink-400 ml-1">· {q.days}d</span>
+                    {q.fromEmoji} {fromCity?.name}
+                    <ChevronRight className="w-3 h-3 text-saffron" strokeWidth={2.5} />
+                    {q.toEmoji} {toState?.name}
                   </button>
                 );
               })}
             </div>
-          </div>
-
-          {/* Hero stats — small footer row */}
-          <div className="mt-10 sm:mt-14 flex items-center justify-center gap-6 sm:gap-10 text-center flex-wrap">
-            {[
-              { value: STATES.length, label: 'States', icon: Compass },
-              { value: `${PLACES.length}+`, label: 'Destinations', icon: MapPin },
-              { value: '17', label: 'Origin cities', icon: HomeIcon },
-              { value: '100%', label: 'Free', icon: Star },
-            ].map(s => {
-              const Icon = s.icon;
-              return (
-                <div key={s.label} className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-ink-100 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-saffron" strokeWidth={2.5} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-lg font-extrabold text-ink-900 leading-none">{s.value}</div>
-                    <div className="text-[10px] text-ink-400 font-semibold uppercase tracking-wider">{s.label}</div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
       </section>

@@ -460,9 +460,9 @@ export default function ItineraryBuilder() {
 
         {/* Generated itinerary */}
         {generated && itinerary && !isGenerating && (
-          <div id="itinerary-result" className="space-y-6 animate-fade-in-up">
+          <div id="itinerary-result" className="space-y-6">
             {/* Summary hero */}
-            <section className="relative bg-gradient-to-br from-ink-900 via-ink-900 to-ink-600 rounded-3xl p-6 sm:p-8 text-white overflow-hidden">
+            <section className="relative bg-gradient-to-br from-ink-900 via-ink-900 to-ink-600 rounded-3xl p-6 sm:p-8 text-white overflow-hidden animate-fade-in-up" style={{ animationDelay: '0ms' }}>
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-saffron/30 rounded-full blur-3xl" />
               <div className="relative">
                 <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-saffron mb-3">
@@ -519,16 +519,17 @@ export default function ItineraryBuilder() {
               </div>
             </section>
 
-            {/* 🗺 Route */}
+            {/* 🗺 Route — blue */}
             {itinerary.journey.length > 0 && (
-              <section className="bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-soft">
+              <section className="relative bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-card overflow-hidden animate-fade-in-up" style={{ animationDelay: '120ms' }}>
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 to-blue-600" />
                 <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-saffron/10 flex items-center justify-center">
-                      <Route className="w-5 h-5 text-saffron" strokeWidth={2.2} />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center ring-1 ring-sky-200">
+                      <Route className="w-6 h-6 text-blue-700" strokeWidth={2.2} />
                     </div>
                     <div>
-                      <div className="text-[11px] font-bold uppercase tracking-widest text-saffron">🗺 Route</div>
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-blue-700">🗺 Route</div>
                       <h2 className="font-display text-2xl font-extrabold text-ink-900 leading-tight">Travel route</h2>
                       <p className="text-ink-400 text-sm">From {origin?.emoji} {origin?.name} · round trip</p>
                     </div>
@@ -605,27 +606,37 @@ export default function ItineraryBuilder() {
               </section>
             )}
 
-            {/* 💰 Cost breakdown */}
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-soft">
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-saffron/10 flex items-center justify-center">
-                    <Wallet className="w-5 h-5 text-saffron" strokeWidth={2.2} />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-saffron">💰 Cost</div>
-                    <h2 className="font-display text-2xl font-extrabold text-ink-900 leading-tight">Cost breakdown</h2>
-                    <p className="text-ink-400 text-sm">All-inclusive · for your group</p>
-                  </div>
+            {/* 💰 Cost — green */}
+            <section className="relative bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-card overflow-hidden animate-fade-in-up" style={{ animationDelay: '240ms' }}>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-green-600" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center ring-1 ring-emerald-200">
+                  <Wallet className="w-6 h-6 text-emerald-700" strokeWidth={2.2} />
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold uppercase tracking-widest text-ink-400">Total</p>
-                  <p className="font-display text-3xl sm:text-4xl font-extrabold text-ink-900 tracking-tight">
-                    ₹{itinerary.totalEstimatedCost.total.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-ink-400 mt-0.5">
-                    ≈ ₹{Math.round(itinerary.totalEstimatedCost.total / options.groupSize).toLocaleString()} / person
-                  </p>
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-widest text-emerald-700">💰 Cost</div>
+                  <h2 className="font-display text-2xl font-extrabold text-ink-900 leading-tight">Cost breakdown</h2>
+                  <p className="text-ink-400 text-sm">All-inclusive · for your group</p>
+                </div>
+              </div>
+
+              {/* Giant total card */}
+              <div className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 sm:p-7 mb-6 border border-emerald-100 overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-200/40 rounded-full blur-3xl" />
+                <div className="relative flex items-end justify-between flex-wrap gap-4">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">Total estimated cost</div>
+                    <div className="font-display font-extrabold text-ink-900 leading-none tracking-tight text-5xl sm:text-6xl lg:text-7xl">
+                      ₹{itinerary.totalEstimatedCost.total.toLocaleString()}
+                    </div>
+                    <div className="text-ink-600 text-sm font-semibold mt-3">
+                      ≈ <span className="font-extrabold text-ink-900">₹{Math.round(itinerary.totalEstimatedCost.total / options.groupSize).toLocaleString()}</span> per person · {options.groupSize} traveller{options.groupSize > 1 ? 's' : ''} · {options.numDays} days
+                    </div>
+                  </div>
+                  <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-emerald-100">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">All-inclusive</div>
+                    <div className="text-xs font-bold text-ink-600">Travel · Stay · Food · Entry</div>
+                  </div>
                 </div>
               </div>
 
@@ -648,7 +659,7 @@ export default function ItineraryBuilder() {
                         <span className="text-sm font-extrabold text-ink-900 tabular-nums">₹{value.toLocaleString()}</span>
                       </div>
                       <div className="h-2 bg-ink-50 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-saffron to-orange-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        <div className="h-full bg-gradient-to-r from-emerald-400 to-green-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -666,21 +677,22 @@ export default function ItineraryBuilder() {
               </div>
             </section>
 
-            {/* 📅 Day-by-day */}
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-soft">
+            {/* 📅 Day-by-day — purple */}
+            <section className="relative bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-card overflow-hidden animate-fade-in-up" style={{ animationDelay: '360ms' }}>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-purple-600" />
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-2xl bg-saffron/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-saffron" strokeWidth={2.2} />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center ring-1 ring-violet-200">
+                  <Calendar className="w-6 h-6 text-violet-700" strokeWidth={2.2} />
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-widest text-saffron">📅 Plan</div>
+                  <div className="text-[11px] font-bold uppercase tracking-widest text-violet-700">📅 Itinerary</div>
                   <h2 className="font-display text-2xl font-extrabold text-ink-900 leading-tight">Day-by-day plan</h2>
                   <p className="text-ink-400 text-sm">{itinerary.days.length} days · {itinerary.route.length} destinations</p>
                 </div>
               </div>
 
               <div className="relative">
-                <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-saffron via-saffron/30 to-transparent" />
+                <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-violet-500 via-violet-300 to-transparent" />
                 <div className="space-y-6">
                   {itinerary.days.map(day => {
                     const TravelIcon = day.places[0]?.travelOptions?.[0]
@@ -689,7 +701,7 @@ export default function ItineraryBuilder() {
                     return (
                       <div key={day.day} className="relative flex gap-5">
                         <div className="relative flex-shrink-0">
-                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-saffron to-orange-500 text-white flex flex-col items-center justify-center font-extrabold text-xs leading-none shadow-glow">
+                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex flex-col items-center justify-center font-extrabold text-xs leading-none shadow-[0_8px_20px_-6px_rgba(139,92,246,0.55)]">
                             <span className="text-[9px] uppercase tracking-wider opacity-80">Day</span>
                             <span className="text-base">{day.day}</span>
                           </div>
@@ -739,7 +751,7 @@ export default function ItineraryBuilder() {
 
             {/* Tips */}
             {itinerary.tips.length > 0 && (
-              <section className="bg-amber-50 rounded-3xl p-6 sm:p-8 border border-amber-100">
+              <section className="bg-amber-50 rounded-3xl p-6 sm:p-8 border border-amber-100 animate-fade-in-up" style={{ animationDelay: '480ms' }}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
                     <Lightbulb className="w-5 h-5 text-amber-700" strokeWidth={2.2} />
