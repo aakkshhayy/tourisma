@@ -29,6 +29,21 @@ const GRADIENT_CLASSES: Record<string, string> = {
   'from-violet-500 to-purple-700': 'from-violet-500 to-purple-700',
   'from-slate-500 to-blue-600': 'from-slate-500 to-blue-600',
   'from-blue-600 to-indigo-700': 'from-blue-600 to-indigo-700',
+  'from-pink-500 to-red-600': 'from-pink-500 to-red-600',
+  'from-orange-500 to-amber-600': 'from-orange-500 to-amber-600',
+  'from-teal-500 to-cyan-700': 'from-teal-500 to-cyan-700',
+  'from-amber-600 to-orange-700': 'from-amber-600 to-orange-700',
+  'from-blue-500 to-teal-600': 'from-blue-500 to-teal-600',
+  'from-yellow-500 to-amber-600': 'from-yellow-500 to-amber-600',
+  'from-purple-500 to-pink-600': 'from-purple-500 to-pink-600',
+  'from-rose-600 to-red-700': 'from-rose-600 to-red-700',
+  'from-indigo-500 to-purple-700': 'from-indigo-500 to-purple-700',
+  'from-red-500 to-rose-600': 'from-red-500 to-rose-600',
+  'from-blue-400 to-indigo-600': 'from-blue-400 to-indigo-600',
+  'from-stone-500 to-amber-700': 'from-stone-500 to-amber-700',
+  'from-teal-400 to-cyan-600': 'from-teal-400 to-cyan-600',
+  'from-cyan-500 to-blue-600': 'from-cyan-500 to-blue-600',
+  'from-amber-400 to-yellow-500': 'from-amber-400 to-yellow-500',
 };
 
 const HOW_IT_WORKS = [
