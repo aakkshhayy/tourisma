@@ -12,7 +12,7 @@ import {
   Printer, ChevronLeft, Plane, Utensils, Ticket, Package,
   TrendingUp, Map as MapIcon, Compass, Home as HomeIcon, Route, Clock,
   Loader2, Download, Share2, Info, Wand2, Zap, IndianRupee, Scale,
-  Trophy,
+  Trophy, Search,
 } from 'lucide-react';
 
 const TRAVEL_ICONS_LR: Record<string, typeof Train> = {
@@ -173,6 +173,20 @@ export default function ItineraryBuilder() {
   };
 
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const [placeSearch, setPlaceSearch] = useState('');
+
+  const filteredPlaces = useMemo(() => {
+    const q = placeSearch.trim().toLowerCase();
+    if (!q) return PLACES;
+    return PLACES.filter(p => {
+      const stateName = getStateById(p.state)?.name?.toLowerCase() ?? '';
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.tagline.toLowerCase().includes(q) ||
+        stateName.includes(q)
+      );
+    });
+  }, [placeSearch]);
   const handleShare = async () => {
     if (!itinerary) return;
     const origin = getOriginById(options.originCityId);
@@ -317,32 +331,75 @@ export default function ItineraryBuilder() {
           )}
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-ink-400 mb-3">Quick add</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[480px] overflow-y-auto pr-1">
-              {PLACES.map(p => {
-                const sel = isSelected(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => togglePlace(p)}
-                    className={`group relative flex items-center gap-2.5 p-3 rounded-2xl text-left text-sm transition-all border-2
-                      ${sel
-                        ? 'border-saffron bg-saffron/5'
-                        : 'border-ink-100 bg-white hover:border-saffron/40 hover:bg-saffron/5'}`}
-                  >
-                    <span className="text-xl flex-shrink-0">{p.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-ink-900 truncate text-sm leading-tight">{p.name}</div>
-                      <div className="text-[11px] text-ink-400 capitalize truncate">{getStateById(p.state)?.name}</div>
-                    </div>
-                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all
-                      ${sel ? 'bg-saffron text-white' : 'bg-ink-50 text-ink-400 group-hover:bg-saffron/20 group-hover:text-saffron'}`}>
-                      {sel ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+              <p className="text-xs font-bold uppercase tracking-widest text-ink-400">Quick add</p>
+              <p className="text-[11px] text-ink-400 font-semibold">
+                <span className="font-extrabold text-ink-900">{filteredPlaces.length}</span> of {PLACES.length} destinations
+              </p>
             </div>
+
+            {/* Search box */}
+            <div className="relative mb-3">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" strokeWidth={2.2} />
+              <input
+                type="text"
+                placeholder="Search by place, tagline or state — e.g. Goa, Taj Mahal, Sikkim…"
+                value={placeSearch}
+                onChange={e => setPlaceSearch(e.target.value)}
+                className="w-full pl-11 pr-10 py-3 rounded-2xl border-2 border-ink-100 bg-white text-sm font-medium focus:outline-none focus:border-saffron focus:ring-4 focus:ring-saffron/10 transition-all"
+              />
+              {placeSearch && (
+                <button
+                  onClick={() => setPlaceSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-ink-50 hover:bg-ink-100 text-ink-600 flex items-center justify-center transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+
+            {filteredPlaces.length === 0 ? (
+              <div className="text-center py-10 bg-ink-50/40 rounded-2xl border border-ink-100">
+                <div className="w-12 h-12 mx-auto bg-white rounded-2xl flex items-center justify-center mb-3 border border-ink-100">
+                  <Search className="w-5 h-5 text-ink-400" strokeWidth={2.2} />
+                </div>
+                <p className="text-sm font-extrabold text-ink-900">No matches for "{placeSearch}"</p>
+                <p className="text-xs text-ink-400 mt-1">Try a city, monument, or state name.</p>
+                <button
+                  onClick={() => setPlaceSearch('')}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-saffron hover:underline"
+                >
+                  Clear search
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[480px] overflow-y-auto pr-1">
+                {filteredPlaces.map(p => {
+                  const sel = isSelected(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => togglePlace(p)}
+                      className={`group relative flex items-center gap-2.5 p-3 rounded-2xl text-left text-sm transition-all border-2
+                        ${sel
+                          ? 'border-saffron bg-saffron/5'
+                          : 'border-ink-100 bg-white hover:border-saffron/40 hover:bg-saffron/5'}`}
+                    >
+                      <span className="text-xl flex-shrink-0">{p.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-ink-900 truncate text-sm leading-tight">{p.name}</div>
+                        <div className="text-[11px] text-ink-400 capitalize truncate">{getStateById(p.state)?.name}</div>
+                      </div>
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all
+                        ${sel ? 'bg-saffron text-white' : 'bg-ink-50 text-ink-400 group-hover:bg-saffron/20 group-hover:text-saffron'}`}>
+                        {sel ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 
