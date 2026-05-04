@@ -167,8 +167,16 @@ const MODE_PROFILES: Record<string, ModeProfile> = {
 // Road-distance approximation: India's road network has ~25-30% detour vs straight line
 const ROAD_FACTOR = 1.28;
 
+// Tier travel-cost multipliers (sleeper vs AC vs premium classes)
+const TIER_TRAVEL_MULT: Record<ItineraryOptions['stayType'], number> = {
+  budget: 0.8,    // sleeper class trains, non-AC bus, shared cab
+  mid: 1.0,       // 3AC trains, AC bus, normal cab
+  luxury: 1.45,   // 1AC / business class, premium cab, executive flights
+};
+
 // Compute every viable mode for a leg so users can compare cost vs time.
-function computeAllOptions(straightKm: number): ModeOption[] {
+function computeAllOptions(straightKm: number, tier: ItineraryOptions['stayType']): ModeOption[] {
+  const mult = TIER_TRAVEL_MULT[tier];
   const opts: ModeOption[] = [];
   const make = (modeKey: keyof typeof MODE_PROFILES, distance: number): ModeOption => {
     const p = MODE_PROFILES[modeKey];
@@ -176,7 +184,7 @@ function computeAllOptions(straightKm: number): ModeOption[] {
       mode: p.mode,
       distanceKm: Math.round(distance),
       durationHours: +(distance / p.speedKmph + p.bufferHours).toFixed(1),
-      cost: Math.round(p.base + distance * p.perKm),
+      cost: Math.round((p.base + distance * p.perKm) * mult),
     };
   };
   // Train: feasible for any distance up to ~2500km
@@ -221,7 +229,7 @@ function computeLeg(
   isReturn: boolean = false,
 ): JourneyLeg {
   const straightKm = haversineKm(fromCoords, toCoords);
-  const allOptions = computeAllOptions(straightKm);
+  const allOptions = computeAllOptions(straightKm, options.stayType);
   const selected = pickSelectedOption(allOptions, options.optimisation, options.travelMode, straightKm);
 
   return {
@@ -442,6 +450,17 @@ function buildTips(places: TouristPlace[], options: ItineraryOptions, totalDista
 
   // Cap to 6 tips so the list stays scannable
   return out.slice(0, 6);
+}
+
+// Suggest an ideal trip duration given the selected destinations.
+// Roughly: sum of recommendedDays per place, plus 1 buffer day per
+// inter-state transition, capped at a sane minimum/maximum.
+export function getRecommendedDays(places: TouristPlace[]): number {
+  if (places.length === 0) return 0;
+  const placeDays = places.reduce((s, p) => s + Math.max(1, p.recommendedDays), 0);
+  const states = new Set(places.map(p => p.state));
+  const transitionBuffer = Math.max(0, states.size - 1);
+  return Math.min(21, Math.max(2, placeDays + transitionBuffer));
 }
 
 export function generateItinerary(places: TouristPlace[], options: ItineraryOptions): Itinerary {

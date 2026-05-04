@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useItineraryStore } from '../store/itineraryStore';
-import { generateItinerary } from '../utils/itineraryGenerator';
+import { generateItinerary, getRecommendedDays } from '../utils/itineraryGenerator';
 import { Itinerary } from '../types';
 import { PLACES, getStateById, getPlaceById } from '../data/places';
 import { ORIGIN_CITIES, getOriginById } from '../data/origins';
@@ -20,9 +20,9 @@ const TRAVEL_ICONS_LR: Record<string, typeof Train> = {
 };
 
 const STAY_OPTIONS = [
-  { id: 'budget', label: 'Budget', desc: 'Hostels & guesthouses' },
-  { id: 'mid', label: 'Mid-range', desc: '3-star hotels' },
-  { id: 'luxury', label: 'Luxury', desc: '4-5 star hotels' },
+  { id: 'budget', label: 'Budget', desc: 'Hostels · sleeper trains · non-AC bus' },
+  { id: 'mid', label: 'Standard', desc: '3-star hotels · 3AC trains · AC bus' },
+  { id: 'luxury', label: 'Premium', desc: '4-5 star · 1AC trains · premium cab' },
 ] as const;
 
 const TRAVEL_OPTIONS = [
@@ -61,6 +61,14 @@ export default function ItineraryBuilder() {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [generated, setGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const LOADING_MESSAGES = [
+    'Routing from your city…',
+    'Calculating distances and durations…',
+    'Comparing train, bus and flight options…',
+    'Estimating stay, food and entry costs…',
+    'Planning your perfect trip…',
+  ];
 
   const currentStep = useMemo(() => {
     if (generated) return 3;
@@ -78,8 +86,13 @@ export default function ItineraryBuilder() {
   const handleGenerate = () => {
     if (selectedPlaces.length === 0) return;
     setIsGenerating(true);
-    // Brief delay so the loader is visible & the action feels deliberate
+    setLoadingMsgIndex(0);
+    // Cycle through messages for a delightful loading experience
+    const interval = setInterval(() => {
+      setLoadingMsgIndex(i => Math.min(i + 1, LOADING_MESSAGES.length - 1));
+    }, 280);
     setTimeout(() => {
+      clearInterval(interval);
       const result = generateItinerary(selectedPlaces, options);
       setItinerary(result);
       setGenerated(true);
@@ -87,7 +100,7 @@ export default function ItineraryBuilder() {
       setTimeout(() => {
         document.getElementById('itinerary-result')?.scrollIntoView({ behavior: 'smooth' });
       }, 80);
-    }, 700);
+    }, 1400);
   };
 
   const handleReset = () => {
@@ -357,6 +370,30 @@ export default function ItineraryBuilder() {
                 <span className="text-2xl font-extrabold text-ink-900">{options.numDays}</span>
                 <button onClick={() => setOptions({ numDays: Math.min(30, options.numDays + 1) })} className="w-10 h-10 rounded-lg hover:bg-ink-50 transition-colors font-bold text-xl text-ink-600">+</button>
               </div>
+              {(() => {
+                const rec = getRecommendedDays(selectedPlaces);
+                if (rec === 0) return null;
+                if (rec === options.numDays) {
+                  return (
+                    <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+                      <Check className="w-3 h-3" strokeWidth={3} />
+                      Ideal duration for your selection
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => setOptions({ numDays: rec })}
+                    className="mt-2 w-full inline-flex items-center justify-between gap-2 bg-violet-50 hover:bg-violet-100 border border-violet-100 rounded-lg px-2.5 py-1.5 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-violet-700">
+                      <Sparkles className="w-3 h-3" strokeWidth={2.5} />
+                      Recommended: {rec} day{rec > 1 ? 's' : ''}
+                    </span>
+                    <span className="text-[10px] font-extrabold text-violet-700 bg-white px-1.5 py-0.5 rounded">Apply</span>
+                  </button>
+                );
+              })()}
             </div>
 
             <div className="bg-ink-50/40 rounded-2xl p-5 border border-ink-100">
@@ -485,14 +522,32 @@ export default function ItineraryBuilder() {
           )}
         </section>
 
-        {/* Loading overlay (also visible inline) */}
+        {/* Loading state — cycling messages */}
         {isGenerating && (
-          <div className="bg-white rounded-3xl p-10 border border-ink-100 shadow-soft text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-saffron/10 mb-4">
-              <Loader2 className="w-7 h-7 text-saffron animate-spin" strokeWidth={2.2} />
+          <div className="relative bg-gradient-to-br from-saffron/5 via-amber-50 to-orange-50 rounded-3xl p-10 sm:p-12 border-2 border-saffron/20 text-center overflow-hidden">
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-saffron/15 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-amber-200/30 rounded-full blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron to-orange-500 mb-5 shadow-glow">
+                <Loader2 className="w-8 h-8 text-white animate-spin" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-display text-2xl sm:text-3xl font-extrabold text-ink-900 leading-tight">
+                Planning your perfect trip…
+              </h3>
+              <p key={loadingMsgIndex} className="text-ink-600 text-sm sm:text-base font-medium mt-3 animate-fade-in-up">
+                {LOADING_MESSAGES[loadingMsgIndex]}
+              </p>
+              {/* Step dots */}
+              <div className="mt-6 flex items-center justify-center gap-1.5">
+                {LOADING_MESSAGES.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-300
+                      ${i <= loadingMsgIndex ? 'bg-saffron w-8' : 'bg-ink-100 w-3'}`}
+                  />
+                ))}
+              </div>
             </div>
-            <h3 className="font-display text-xl font-extrabold text-ink-900">Generating your trip plan…</h3>
-            <p className="text-ink-400 text-sm mt-1">Routing from {origin?.name ?? 'your city'}, calculating distances and costs.</p>
           </div>
         )}
 
