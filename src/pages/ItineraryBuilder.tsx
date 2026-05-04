@@ -707,7 +707,7 @@ export default function ItineraryBuilder() {
                 </div>
 
                 {/* Smart-route banner */}
-                <div className="mb-5 flex items-start gap-3 bg-gradient-to-r from-violet-50 via-purple-50 to-violet-50 border border-violet-100 rounded-2xl p-4">
+                <div className="mb-3 flex items-start gap-3 bg-gradient-to-r from-violet-50 via-purple-50 to-violet-50 border border-violet-100 rounded-2xl p-4">
                   <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center flex-shrink-0">
                     <Sparkles className="w-4 h-4 text-white" strokeWidth={2.5} />
                   </div>
@@ -720,6 +720,73 @@ export default function ItineraryBuilder() {
                     </p>
                   </div>
                 </div>
+
+                {/* Quantified decision-engine insights */}
+                {(() => {
+                  // Sum cheapest-only and fastest-only across all legs to compare
+                  const sumCheapest = itinerary.journey.reduce((acc, l) => {
+                    const c = l.options.reduce((a, b) => (a.cost <= b.cost ? a : b));
+                    return { cost: acc.cost + c.cost, hours: acc.hours + c.durationHours };
+                  }, { cost: 0, hours: 0 });
+                  const sumFastest = itinerary.journey.reduce((acc, l) => {
+                    const f = l.options.reduce((a, b) => (a.durationHours <= b.durationHours ? a : b));
+                    return { cost: acc.cost + f.cost, hours: acc.hours + f.durationHours };
+                  }, { cost: 0, hours: 0 });
+                  const actual = itinerary.journey.reduce((acc, l) => ({
+                    cost: acc.cost + l.cost,
+                    hours: acc.hours + l.durationHours,
+                  }), { cost: 0, hours: 0 });
+
+                  const savedVsFastest = Math.max(0, Math.round(sumFastest.cost - actual.cost));
+                  const savedVsCheapest = +Math.max(0, sumCheapest.hours - actual.hours).toFixed(1);
+                  const cheapestPicks = itinerary.journey.filter(l => {
+                    const c = l.options.reduce((a, b) => (a.cost <= b.cost ? a : b));
+                    return l.mode === c.mode;
+                  }).length;
+                  const fastestPicks = itinerary.journey.filter(l => {
+                    const f = l.options.reduce((a, b) => (a.durationHours <= b.durationHours ? a : b));
+                    return l.mode === f.mode;
+                  }).length;
+
+                  // Pick 3 punchy insights tailored to the strategy
+                  const insights: Array<{ icon: typeof Sparkles; tone: 'green' | 'sky' | 'amber' | 'violet'; label: string }> = [];
+                  insights.push({
+                    icon: Check,
+                    tone: 'green',
+                    label: `Best route — ${itinerary.route.length} stops covered in ${itinerary.totalDistanceKm.toLocaleString()} km`,
+                  });
+                  if (itinerary.optimisation === 'cost' && savedVsFastest > 0) {
+                    insights.push({ icon: IndianRupee, tone: 'green', label: `Saving ₹${savedVsFastest.toLocaleString()} vs picking the fastest mode each leg` });
+                    insights.push({ icon: TrendingUp, tone: 'amber', label: `Cheapest mode chosen on ${cheapestPicks} of ${itinerary.journey.length} legs` });
+                  } else if (itinerary.optimisation === 'time' && savedVsCheapest > 0) {
+                    insights.push({ icon: Zap, tone: 'sky', label: `Saving ${Math.floor(savedVsCheapest)}h ${Math.round((savedVsCheapest % 1) * 60)}m vs picking the cheapest mode each leg` });
+                    insights.push({ icon: Plane, tone: 'sky', label: `Fastest mode chosen on ${fastestPicks} of ${itinerary.journey.length} legs` });
+                  } else {
+                    if (savedVsFastest > 0) insights.push({ icon: IndianRupee, tone: 'green', label: `₹${savedVsFastest.toLocaleString()} cheaper than always flying` });
+                    if (savedVsCheapest > 0) insights.push({ icon: Zap, tone: 'sky', label: `${Math.floor(savedVsCheapest)}h ${Math.round((savedVsCheapest % 1) * 60)}m faster than always taking the cheapest` });
+                  }
+
+                  const toneStyle: Record<typeof insights[number]['tone'], string> = {
+                    green: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                    sky: 'bg-sky-50 text-sky-700 border-sky-100',
+                    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+                    violet: 'bg-violet-50 text-violet-700 border-violet-100',
+                  };
+
+                  return (
+                    <div className="mb-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {insights.slice(0, 3).map((ins, idx) => {
+                        const Icon = ins.icon;
+                        return (
+                          <div key={idx} className={`flex items-start gap-2 px-3 py-2.5 rounded-xl border ${toneStyle[ins.tone]}`}>
+                            <Icon className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                            <span className="text-xs font-bold leading-snug">{ins.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 <div className="space-y-2.5">
                   {itinerary.journey.map((leg, i) => {
