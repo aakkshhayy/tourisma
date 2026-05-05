@@ -12,11 +12,8 @@ import {
   Printer, ChevronLeft, Plane, Utensils, Ticket, Package,
   TrendingUp, Map as MapIcon, Compass, Home as HomeIcon, Route, Clock,
   Loader2, Download, Share2, Info, Wand2, Zap, IndianRupee, Scale,
-  Trophy, Search, Bookmark,
+  Trophy, Search,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
-import AuthModal from '../components/AuthModal';
 
 const TRAVEL_ICONS_LR: Record<string, typeof Train> = {
   train: Train, bus: Bus, cab: Car, flight: Plane, shared_jeep: Car,
@@ -61,13 +58,10 @@ export default function ItineraryBuilder() {
     selectedPlaces, options, setOptions, togglePlace, isSelected, clearSelection,
     addPlace,
   } = useItineraryStore();
-  const { user } = useAuth();
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [generated, setGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
-  const [showAuth, setShowAuth] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const LOADING_MESSAGES = [
     'Routing from your city…',
     'Calculating distances and durations…',
@@ -208,32 +202,6 @@ export default function ItineraryBuilder() {
     } catch { /* user cancelled */ }
   };
 
-  const handleSaveTrip = async () => {
-    if (!itinerary) return;
-    if (!user) {
-      setShowAuth(true);
-      return;
-    }
-    setSaveStatus('saving');
-    const origin = getOriginById(options.originCityId);
-    const title = `${options.numDays}-day trip from ${origin?.name ?? 'home'}: ${itinerary.route.join(' → ')}`;
-    const { error } = await supabase.from('saved_trips').insert({
-      user_id: user.id,
-      title,
-      state: selectedPlaces[0]?.state ?? null,
-      duration: options.numDays,
-      budget: options.stayType,
-      itinerary: itinerary as unknown as Record<string, unknown>,
-    });
-    if (error) {
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 2500);
-    } else {
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2500);
-    }
-  };
-
   // Auto-generate when navigating in via Home with a pre-filled selection — opt-in via hash
   useEffect(() => {
     if (location.hash === '#auto' && selectedPlaces.length > 0 && !generated) {
@@ -246,7 +214,6 @@ export default function ItineraryBuilder() {
 
   return (
     <div className="min-h-screen bg-sand">
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {/* Header */}
       <div className="bg-white border-b border-ink-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -1082,7 +1049,7 @@ export default function ItineraryBuilder() {
             )}
 
             {/* Actions */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 relative">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative">
               <button onClick={handleReset} className="inline-flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-ink-100 bg-white text-ink-900 font-bold hover:border-ink-200 transition-colors">
                 <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
                 Modify
@@ -1095,23 +1062,9 @@ export default function ItineraryBuilder() {
                 <Share2 className="w-4 h-4" strokeWidth={2.5} />
                 Share
               </button>
-              <button onClick={() => window.print()} className="inline-flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-ink-100 bg-white text-ink-900 font-bold hover:border-saffron/40 transition-colors">
+              <button onClick={() => window.print()} className="inline-flex items-center justify-center gap-2 py-4 rounded-2xl bg-ink-900 text-white font-bold hover:bg-ink-600 transition-colors shadow-soft">
                 <Printer className="w-4 h-4" strokeWidth={2.5} />
                 Print
-              </button>
-              <button
-                onClick={handleSaveTrip}
-                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
-                className={`inline-flex items-center justify-center gap-2 py-4 rounded-2xl font-bold transition-all shadow-soft
-                  ${saveStatus === 'saved'
-                    ? 'bg-emerald-600 text-white'
-                    : saveStatus === 'error'
-                    ? 'bg-rose-500 text-white'
-                    : 'bg-gradient-to-r from-saffron to-orange-500 text-white hover:shadow-glow'
-                  } disabled:opacity-70`}
-              >
-                {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2.5} /> : <Bookmark className="w-4 h-4" strokeWidth={2.5} />}
-                {saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Error' : 'Save'}
               </button>
               {shareMsg && (
                 <div className="absolute -top-12 left-0 right-0 mx-auto bg-ink-900 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-soft text-center max-w-xs">
