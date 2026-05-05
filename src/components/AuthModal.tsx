@@ -30,8 +30,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
       if (error) { setError(error); setLoading(false); }
       else onClose();
     } else {
-      const { error } = await signUpWithEmail(email, password);
+      const { error, confirmed } = await signUpWithEmail(email, password);
       if (error) { setError(error); setLoading(false); }
+      else if (confirmed) onClose(); // email confirmation disabled — signed in immediately
       else { setLoading(false); setScreen('verify'); }
     }
   };
