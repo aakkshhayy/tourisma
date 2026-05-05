@@ -42,8 +42,14 @@ export default function Explore() {
   const basePlaces = activeState === 'all' ? PLACES : getPlacesByState(activeState);
   const filtered = basePlaces.filter(p => {
     const matchCat = categoryFilter === 'all' || p.category === categoryFilter;
-    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase())
-      || p.description.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase().trim();
+    const stateName = STATES.find(s => s.id === p.state)?.name?.toLowerCase() ?? '';
+    const matchSearch = !q
+      || p.name.toLowerCase().includes(q)
+      || p.tagline.toLowerCase().includes(q)
+      || p.description.toLowerCase().includes(q)
+      || stateName.includes(q)
+      || p.state.replace(/_/g, ' ').includes(q);
     return matchCat && matchSearch;
   });
 

@@ -6,7 +6,7 @@ import { useItineraryStore } from '../store/itineraryStore';
 import {
   ArrowRight, MapPin, Sparkles, Wallet, Compass, Star,
   Home as HomeIcon, Wand2, Train, Hotel, Utensils,
-  ChevronDown, Check, Plane, ChevronRight,
+  ChevronDown, Check, Plane, ChevronRight, Map as MapIcon,
 } from 'lucide-react';
 
 const GRADIENT_CLASSES: Record<string, string> = {
@@ -277,18 +277,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Discover by state */}
+      {/* Discover by state — featured 8 + browse-all CTA */}
       <section className="bg-sand py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
             <div>
               <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-saffron mb-3">
                 <Compass className="w-4 h-4" strokeWidth={2.5} />
-                Browse by state
+                Featured regions
               </div>
               <h2 className="font-display font-extrabold text-ink-900 text-4xl sm:text-5xl">
-                {STATES.length} incredible regions
+                Most-loved Indian destinations
               </h2>
+              <p className="text-ink-400 text-sm sm:text-base mt-2">A curated handful — browse all {STATES.length} on the Explore page.</p>
             </div>
             <Link to="/explore" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-ink-900 hover:text-saffron transition-colors">
               See all destinations
@@ -296,37 +297,63 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {STATES.map(state => {
-              const placeCount = PLACES.filter(p => p.state === state.id).length;
-              return (
-                <Link
-                  key={state.id}
-                  to={`/explore?state=${state.id}`}
-                  className="group relative overflow-hidden rounded-3xl bg-white border border-ink-100 hover:border-transparent hover:shadow-card transition-all duration-300"
-                >
-                  <div className={`relative bg-gradient-to-br ${GRADIENT_CLASSES[state.coverGradient] ?? 'from-gray-500 to-gray-700'} h-44 p-6 text-white flex flex-col justify-between overflow-hidden`}>
-                    <div className="absolute -bottom-10 -right-6 text-[120px] opacity-20 leading-none">{state.emoji}</div>
-                    <div className="text-4xl drop-shadow-sm group-hover:scale-110 transition-transform duration-500 z-10">{state.emoji}</div>
-                    <div className="z-10">
-                      <h3 className="text-2xl font-extrabold leading-tight">{state.name}</h3>
-                      <div className="flex items-center gap-1.5 mt-1 text-sm font-medium text-white/85">
-                        <MapPin className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        {placeCount} destinations
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {(() => {
+              const featuredIds = ['rajasthan', 'kerala', 'goa', 'himachal_pradesh', 'sikkim', 'ladakh', 'uttarakhand', 'tamil_nadu'];
+              const featured = featuredIds
+                .map(id => STATES.find(s => s.id === id))
+                .filter((s): s is NonNullable<typeof s> => Boolean(s));
+              return featured.map(state => {
+                const placeCount = PLACES.filter(p => p.state === state.id).length;
+                return (
+                  <Link
+                    key={state.id}
+                    to={`/explore?state=${state.id}`}
+                    className="group relative overflow-hidden rounded-3xl bg-white border border-ink-100 hover:border-transparent hover:shadow-card transition-all duration-300"
+                  >
+                    <div className={`relative bg-gradient-to-br ${GRADIENT_CLASSES[state.coverGradient] ?? 'from-gray-500 to-gray-700'} h-40 p-5 text-white flex flex-col justify-between overflow-hidden`}>
+                      <div className="absolute -bottom-10 -right-6 text-[110px] opacity-20 leading-none">{state.emoji}</div>
+                      <div className="text-3xl drop-shadow-sm group-hover:scale-110 transition-transform duration-500 z-10">{state.emoji}</div>
+                      <div className="z-10">
+                        <h3 className="text-xl font-extrabold leading-tight">{state.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-1 text-xs font-medium text-white/85">
+                          <MapPin className="w-3 h-3" strokeWidth={2.5} />
+                          {placeCount} destinations
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="p-5">
-                    <p className="text-ink-600 text-sm line-clamp-2 leading-relaxed">{state.description}</p>
-                    <span className="mt-4 inline-flex items-center gap-1 text-saffron font-bold text-sm">
-                      Explore {state.name}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+                    <div className="p-4">
+                      <p className="text-ink-600 text-xs line-clamp-2 leading-relaxed">{state.description}</p>
+                      <span className="mt-3 inline-flex items-center gap-1 text-saffron font-bold text-xs">
+                        Explore {state.name}
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              });
+            })()}
           </div>
+
+          {/* Browse all 34 CTA */}
+          <Link
+            to="/explore"
+            className="group mt-8 flex items-center justify-between gap-4 bg-white border-2 border-dashed border-ink-200 hover:border-saffron rounded-3xl p-5 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-saffron/10 flex items-center justify-center flex-shrink-0">
+                <MapIcon className="w-6 h-6 text-saffron" strokeWidth={2.2} />
+              </div>
+              <div>
+                <div className="font-extrabold text-ink-900 text-base sm:text-lg">Browse all {STATES.length} regions</div>
+                <div className="text-ink-400 text-xs sm:text-sm">{PLACES.length}+ destinations across every Indian state and union territory</div>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1 text-saffron font-bold text-sm">
+              See all
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+            </span>
+          </Link>
         </div>
       </section>
 
