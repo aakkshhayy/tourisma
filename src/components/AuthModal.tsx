@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Mail, Lock, Loader2, LogIn, UserPlus, ShieldCheck, Phone } from 'lucide-react';
+import { X, Mail, Lock, Loader2, LogIn, UserPlus, ShieldCheck, Phone, MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -11,7 +11,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const { signInWithEmail, signUpWithEmail } = useAuth();
 
   const [tab, setTab] = useState<'email' | 'phone'>('email');
-  const [emailScreen, setEmailScreen] = useState<'signin' | 'signup' | 'verify'>('signin');
+  const [emailScreen, setEmailScreen] = useState<'signin' | 'signup' | 'confirm'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -21,7 +21,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ── OTP helpers ───────────────────────────────────────────
+  // ── OTP helpers (phone only) ──────────────────────────────
   const handleOtpChange = (i: number, val: string) => {
     const digit = val.replace(/\D/g, '').slice(-1);
     const next = [...otp]; next[i] = digit; setOtp(next);
@@ -59,7 +59,17 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     e.preventDefault();
     setLoading(true); setError(null);
     const { error } = await signInWithEmail(email, password);
-    if (error) { setError(error); setLoading(false); } else onClose();
+    if (error) {
+      // Make the "Email not confirmed" error friendlier
+      if (error.toLowerCase().includes('not confirmed')) {
+        setError('Please check your inbox and click the confirmation link we sent you.');
+      } else {
+        setError(error);
+      }
+      setLoading(false);
+    } else {
+      onClose();
+    }
   };
 
   // ── Email: sign up ────────────────────────────────────────
@@ -67,18 +77,17 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     e.preventDefault();
     setLoading(true); setError(null);
     const { error, confirmed } = await signUpWithEmail(email, password);
-    if (error) { setError(error); setLoading(false); }
-    else if (confirmed) onClose();                // email confirmation off → instant login
-    else { resetOtp(); setLoading(false); setEmailScreen('verify'); } // show OTP screen
-  };
-
-  // ── Email: verify OTP ─────────────────────────────────────
-  const handleEmailVerify = async () => {
-    const token = otp.join('');
-    if (token.length < 6) return;
-    setLoading(true); setError(null);
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
-    if (error) { setError(error.message); setLoading(false); } else onClose();
+    if (error) {
+      setError(error);
+      setLoading(false);
+    } else if (confirmed) {
+      // Email confirmation OFF → instant login
+      onClose();
+    } else {
+      // Email confirmation ON → Supabase sends a magic link
+      setLoading(false);
+      setEmailScreen('confirm');
+    }
   };
 
   // ── Phone: send OTP ───────────────────────────────────────
@@ -103,12 +112,8 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     setPhoneStep('input'); setEmailScreen('signin');
   };
 
-  // ── Shared: OTP verification screen ──────────────────────
-  const isVerifyScreen = emailScreen === 'verify' || (tab === 'phone' && phoneStep === 'otp');
-  const verifyFor = tab === 'phone' ? `+91 ${phone}` : email;
-  const handleVerify = tab === 'phone' ? handlePhoneVerify : handleEmailVerify;
-
-  if (isVerifyScreen) {
+  // ── Phone OTP screen ──────────────────────────────────────
+  if (tab === 'phone' && phoneStep === 'otp') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-ink-900/50 backdrop-blur-sm" onClick={onClose} />
@@ -116,36 +121,62 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           <button onClick={onClose} className="absolute top-5 right-5 w-8 h-8 rounded-full bg-ink-50 hover:bg-ink-100 flex items-center justify-center text-ink-600 transition-colors">
             <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
-
           <div className="text-center mb-7">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-soft mb-4">
               <ShieldCheck className="w-7 h-7 text-white" strokeWidth={2.2} />
             </div>
-            <h2 className="font-display text-2xl font-extrabold text-ink-900">Enter your code</h2>
+            <h2 className="font-display text-2xl font-extrabold text-ink-900">Enter OTP</h2>
             <p className="text-ink-400 text-sm mt-2">
               We sent a 6-digit code to<br />
-              <span className="font-bold text-ink-900">{verifyFor}</span>
+              <span className="font-bold text-ink-900">+91 {phone}</span>
             </p>
           </div>
-
           {error && (
             <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-medium text-rose-800 text-center">{error}</div>
           )}
-
           <OtpBoxes autoFocus />
-
-          <button onClick={handleVerify} disabled={loading || otp.some(d => !d)}
+          <button onClick={handlePhoneVerify} disabled={loading || otp.some(d => !d)}
             className="mt-6 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-saffron to-orange-500 text-white font-extrabold text-sm hover:shadow-glow transition-all disabled:opacity-60 disabled:cursor-not-allowed">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2.5} /> : <ShieldCheck className="w-4 h-4" strokeWidth={2.5} />}
             Verify & sign in
           </button>
-
           <p className="mt-4 text-center text-xs text-ink-400">
-            Wrong {tab === 'phone' ? 'number' : 'email'}?{' '}
-            <button
-              onClick={() => { tab === 'phone' ? setPhoneStep('input') : setEmailScreen('signup'); resetOtp(); setError(null); }}
+            Wrong number?{' '}
+            <button onClick={() => { setPhoneStep('input'); resetOtp(); setError(null); }}
               className="font-bold text-saffron hover:underline">Go back</button>
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Email confirm screen (magic link sent) ────────────────
+  if (emailScreen === 'confirm') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-ink-900/50 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-fade-in-up text-center">
+          <button onClick={onClose} className="absolute top-5 right-5 w-8 h-8 rounded-full bg-ink-50 hover:bg-ink-100 flex items-center justify-center text-ink-600 transition-colors">
+            <X className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-soft mb-5">
+            <MailCheck className="w-8 h-8 text-white" strokeWidth={2} />
+          </div>
+          <h2 className="font-display text-2xl font-extrabold text-ink-900 mb-2">Check your inbox</h2>
+          <p className="text-ink-500 text-sm leading-relaxed mb-1">
+            We sent a confirmation link to
+          </p>
+          <p className="font-bold text-ink-900 text-base mb-5">{email}</p>
+          <div className="bg-ink-50 rounded-2xl px-5 py-4 text-sm text-ink-600 leading-relaxed mb-6">
+            Click the <span className="font-bold text-ink-900">Confirm your email</span> button in the email to activate your account. Then come back and sign in.
+          </div>
+          <button
+            onClick={() => { setEmailScreen('signin'); setError(null); }}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-ink-900 text-white font-extrabold text-sm hover:bg-ink-700 transition-all">
+            <LogIn className="w-4 h-4" strokeWidth={2.5} />
+            Back to sign in
+          </button>
+          <p className="mt-3 text-xs text-ink-400">Didn't get the email? Check your spam folder.</p>
         </div>
       </div>
     );
@@ -195,7 +226,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             </div>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" strokeWidth={2.2} />
-              <input type="password" placeholder="Password (uppercase, lowercase, digit & symbol)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
+              <input type="password" placeholder={emailScreen === 'signup' ? 'Password (uppercase, lowercase, digit & symbol)' : 'Password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
                 className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-ink-100 text-sm font-medium focus:outline-none focus:border-saffron focus:ring-4 focus:ring-saffron/10 transition-all" />
             </div>
             <button type="submit" disabled={loading || !email || !password}
